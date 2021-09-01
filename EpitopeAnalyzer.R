@@ -2,7 +2,8 @@
 #install.packages("tidyselect")
 #install.packages("shinydashboard")
 #install.packages("rlist")
-#detach("package:MASS", unload = TRUE)
+#install.packages("shinycssloaders")
+
 ### Libraries needed
 library(shiny)
 library(ggplot2)
@@ -17,6 +18,10 @@ library(tidyselect)
 library(rlist)
 library(dplyr)
 library(tibble)
+library(shinycssloaders)
+
+# Options for Spinner
+options(spinner.color="#0275D8", spinner.color.background="#ffffff", spinner.size=1)
 
 #setwd("Z:/PPP/shiny_app")
 #install.packages('rsconnect')
@@ -26,6 +31,9 @@ library(tibble)
 #setwd("Z:/ppp")
 
 options(shiny.maxRequestSize = 30*1024^2)
+
+
+
 
 # Function to calculate U-set 
 get_intersect_members <- function (x, ...){
@@ -59,94 +67,114 @@ get_intersect_members <- function (x, ...){
 ui <- dashboardPage(
   
   # HEADER
-  dashboardHeader(title="Epitope Analyzer",
+  dashboardHeader(title = "Epitope Analyzer",
                   titleWidth = 250),
   # SIDEBAR
   dashboardSidebar(
-    conditionalPanel(condition="input.tabselected==1",
+    conditionalPanel(condition = "input.tabselected==1",
                      column(width = 12,
-                            fileInput("file1", "Upload a txt file", accept = ".txt"))),
+                            fileInput("input_file", "Upload Input file", accept = ".txt"))), 
     conditionalPanel(condition="input.tabselected==2",
                      column(width = 12,
-                            checkboxGroupInput('allele','MHC Allele', choices = c(), selected = c()),
-                            numericInput("xmin", "Min value", min = 0, max = 10, value = 0),
-                            numericInput("xmax", "Max value", min = 0, max = 10, value = 2),
+                            "Distribution Analysis:",
+                            checkboxGroupInput('allele','MHC alleles', choices = c(), selected = c()),
+                            radioButtons("conditional","Relation among MHC alleles", list("AND", "OR") ),
+                            numericInput("xmin", "Min %rank", min = 0, max = 10, value = 0),
+                            numericInput("xmax", "Max %rank", min = 0, max = 10, value = 2),
                             numericInput("step", "Step", min = 0, max = 1, value = 0.1),
-                            numericInput("n_prots", "Min number of proteins conserved", min = 1, max = 10, value = 2))),
+                            radioButtons("conditional_plot","Plot type", list("Histogram", "Cumulative Histogram") ),
+                            actionButton("go_2_1", "Run analysis"),
+                            "Analysis of Presence/Absence of epitopes in proteins:",
+                            numericInput("n_prots", "Min number of proteins", min = 1, max = 10, value = 2),
+                            actionButton("go_2_2", "Plot duplicated epitopes"))),
     
     conditionalPanel(condition="input.tabselected==3",
                      column(width = 12,
-                            numericInput("cutoff", "Cutoff", min = 0, max = 10, value = 2))),
+                            "Density Analysis:",
+                            numericInput("cutoff", "Cutoff %rank", min = 0, max = 10, value = 2),
+                            actionButton("go_3_1", "Run analysis"),
+                            "Plot customization:",
+                            radioButtons("plot_type","Plot type: ", list("Heatmap", "Bar plot")),
+                            radioButtons("fill_type","Color by: ", list("Epitopes Number", "Epitopes Density")),
+                            actionButton("go_3_2", "Generate Plot"))),
 
     conditionalPanel(condition="input.tabselected==4",
                      column(width = 12,
-                            selectInput("protein", "Protein", choices = c(), selected =c())),
+                            "Location Analysis",
+                            selectInput("protein_4", "Protein", choices = c(), selected =c())),
                      column(width = 12,
-                            numericInput("cutpoint", "Cutoff", min = 0, max = 10, value = 2)),
+                            numericInput("cutoff_4", "Cutoff %rank", min = 0, max = 10, value = 2)),
                      column(width = 12,
-                            checkboxGroupInput('allele2','MHC Allele', choices = c(), selected = c())),
-                     actionButton("run", "Run analysis")),
+                            checkboxGroupInput('allele_4','MHC alleles', choices = c(), selected = c())),
+                     column(width = 12,
+                            radioButtons("conditional_4","Relation among MHC alleles", list("AND", "OR") )),
+                     column(width = 12, 
+                            actionButton("go_4", "Run analysis"))),
     
     conditionalPanel(condition ="input.tabselected==5",
                      column(width = 12,
-                            numericInput("cutpoint2", "Cutoff", min = 0, max = 10, value = 2)),
-                     column(width = 12,
+                            "Promiscuity Analysis",
                             numericInput("min_al", "Minimum number of alleles", min = 0, max = 10, value = 6)),
                      column(width = 12,
-                            numericInput("sb_ct", "Strong Binding cutoff", min = 0, max = 10, value = 0.5)),
+                            numericInput("sb_ct", "Strong Binding cutoff %rank", min = 0, max = 10, value = 0.5)),
                      column(width = 12,
-                            numericInput("wb_ct", "Weak Binding cutoff", min = 0, max = 10, value = 2))),
+                            numericInput("wb_ct", "Weak Binding cutoff %rank", min = 0, max = 10, value = 2)),
+                     column(width = 12,
+                            actionButton("go_5", "Run analysis"))),
     conditionalPanel(condition="input.tabselected==6",
                      column(width = 12,
-                            numericInput("cutoff_5", "Cutoff", min = 0, max = 10, value = 2)),
+                            "Up-Set Analysis",
+                            numericInput("cutoff_6", "Cutoff %rank", min = 0, max = 10, value = 2)),
                      column(width = 12,
-                            checkboxGroupInput("allele3", "MHC Allele", choices = c(), selected = c())),
-                     actionButton("go", "Run analysis"))),
+                            checkboxGroupInput("allele_6", "MHC alleles", choices = c(), selected = c())),
+                     column(width = 12,
+                            actionButton("go_6", "Run analysis")))),
   # BODY
   dashboardBody(
     
     #mainPanel(
     tabsetPanel(
       tabPanel("Input files", value = 1,
-               h4( "Input files"),
-               wellPanel(DT::dataTableOutput("contents"))),
+               wellPanel(style = "overflow-x:auto; height:200px;",uiOutput('text_1')),
+               wellPanel(DT::dataTableOutput("contents_1"))),
       
-      tabPanel("Epitopes Distribution", value=2,
-               h4("Distribution of epitopes"),
-               wellPanel(uiOutput('text_1')),
+      tabPanel("Epitope Distribution", value=2,
+               h4("Distribution of epitopes by MHC allele"),
+               wellPanel(style = "overflow-x:auto; height:200px;",uiOutput('text_2')),
                fluidRow(
-                 column(5,plotlyOutput("plot1", height = 500)),
-                 column(7,DT::dataTableOutput("table_1")),
-                 column(2,downloadButton("downloadData2", "Download"), offset = 6)),
-               fluidRow(column(12, plotlyOutput("plot1_1")))),
+                 column(5,withSpinner(plotlyOutput("plot_2_1", height = 500), type = 5)),
+                 column(7,withSpinner(DT::dataTableOutput("table_2"), type = 5)),
+                 column(2,downloadButton("downloadData2", "Download Table"), offset = 6)),
+               fluidRow(column(12, withSpinner(plotlyOutput("plot_2_2"), type = 5)))),
       
-      tabPanel("Density Protein", value = 3,
-               h4("Epitopes Density per Protein"),
-               wellPanel(uiOutput('text_2')),
-               fluidRow(column(6, plotlyOutput("plot2", height = 500)),
-                        column(6, DT::dataTableOutput("table_2")),
-                        column(2,downloadButton("downloadData3", "Download"), offset = 6)),
-               fluidRow(column(12, plotlyOutput("plot4_4")))),
+      tabPanel("Epitope Density ", value = 3,
+               h4("Correlation between number of epitopes and protein lengths"),
+               wellPanel(style = "overflow-x:auto; height:200px;",uiOutput('text_3')),
+               fluidRow(column(6, withSpinner(plotlyOutput("plot_3_1", height = 500), type = 5)),
+                        column(6, withSpinner(DT::dataTableOutput("table_3"), type = 5)),
+                        column(2,downloadButton("downloadData3", "Download Table"), offset = 6)),
+               fluidRow(column(12, withSpinner(plotlyOutput("plot_3_2"), type = 5)))),
       
-      tabPanel("Epitopes Plot Location", value=4,
-               h4("Location of all epitopes over the protein"),
-               wellPanel(uiOutput('text_3')),
-               fluidRow(column(6, plotlyOutput("plot3", height = 200)),
-                        column(6, DT::dataTableOutput("table_3")),
-                        column(2,downloadButton("downloadData4", "Download"), offset = 6))),
+      tabPanel("Epitope Location", value=4,
+               h4("Amino acid position of the epitopes in proteins"),
+               wellPanel(style = "overflow-x:auto; height:200px;",uiOutput('text_4')),
+               fluidRow(column(6, withSpinner(plotlyOutput("plot_4", height = 200), type = 5)),
+                        column(6, withSpinner(DT::dataTableOutput("table_4"), type = 5)),
+                        column(2,downloadButton("downloadData4", "Download Table"), offset = 6))),
       
-      tabPanel("Epitope promiscuity", value=5,
-               h4("Promiscuity of epitopes"),
-               wellPanel(uiOutput('text_4')),
-               fluidRow(column(6, plotlyOutput("plot4", height = 500)),
-                        column(6, DT::dataTableOutput("table_4"))),
-               fluidRow(column(2, downloadButton("downloadData5", "Download"), offset = 6))),
+      tabPanel("Epitope Promiscuity", value=5,
+               h4("Number of alleles and binding rank per epitopes"),
+               wellPanel(style = "overflow-x:auto; height:200px;",uiOutput('text_5')),
+               fluidRow(column(6, withSpinner(plotlyOutput("plot_5", height = 500), type = 5)),
+                        column(6, withSpinner(DT::dataTableOutput("table_5"), type = 5))),
+               fluidRow(column(2, downloadButton("downloadData5", "Download Table"), offset = 6))),
       
-      tabPanel("Uset", value = 6,
-               h4("Tab content"),
-               plotlyOutput("plot5", height = "550px"),
-               fluidRow(column(12, DT::dataTableOutput("table_6"))),
-               fluidRow(column(2, downloadButton("downloadData6", "Download"), offset = 6))),
+      tabPanel("Epitope Intersection", value = 6,
+               h4("Set of epitopes shared between different MHC allele combinations"),
+               wellPanel(style = "overflow-x:auto; height:200px;",uiOutput('text_6')),
+               withSpinner(plotlyOutput("plot_6", height = "550px"), type = 5),
+               fluidRow(column(12, withSpinner(DT::dataTableOutput("table_6"), type = 5))),
+               fluidRow(column(2, downloadButton("downloadData6", "Download Table"), offset = 6))),
       
       id = "tabselected"
     )
@@ -155,90 +183,322 @@ ui <- dashboardPage(
 
 server <- function(session, input, output){
   
-  #### Input Tab
-  output$contents <- DT::renderDataTable({
-    file <- input$file1
+  #############
+  # Input tab #
+  #############
+  
+  output$text_1 <-renderUI({
+    github_code <- a("GitHub", href="https://github.com/SotoLF/Epitope-Analyzer")
+    case_1_file <- a("File 1", href="https://raw.githubusercontent.com/SotoLF/Epitope-Analyzer/main/Examples/SARS_cov_CTLs_parsed.txt")
+    case_2_file <- a("File 2", href="https://raw.githubusercontent.com/SotoLF/Epitope-Analyzer/main/Examples/SARS_cov_HTLs_parsed.txt")
+    case_3_file <- a("case 3", href="https://raw.githubusercontent.com/SotoLF/Epitope-Analyzer/main/Examples/leishmania_HTLs.txt?token=AHHMUKJWPDHSUTX76XWNOTDBFMSLM")
+    pmid1 <- a ("32711842", href= "https://pubmed.ncbi.nlm.nih.gov/32711842/")
+    pmid2 <- a ("32406916", href= "https://pubmed.ncbi.nlm.nih.gov/32406916/")
+    pmid3 <- a ("32308001", href= "https://pubmed.ncbi.nlm.nih.gov/32308001/")
+    list(p(HTML(paste( "<b> Epitope Analyzer </b> is a Shiny app aimed to filter and analyze predicted T-cell epitopes. 
+    Epitope Analyzer includes 5 tools: (1) Epitope Distribution, (2) Epitope Density, (3) Epitope Location, (4) Epitope Promiscuity, 
+    and (5) Epitope Intersection. It needs a txt format file tab-delimited where the first 4 columns are the peptide sequence, the position
+    of the peptide within the protein, the length of the protein, and the name of the protein. The following columns should be named
+    with the allele containing the %rank score assigned to each peptide for each MHC allele. The <b>%rank score</b> is a number between
+    0 and 100. It is defined as the rank of the predicted binding score compared to a set of random natural peptides by several predictors
+    of T-cell epitopes (",pmid1,pmid2,pmid3, "). Usually, the output of these predictors requires to be parsed before uploading in the shiny app. Once
+    the input file is uploaded, parameters need to be set by the user followed by clicking on the <b>Run analysis</b>  or <b> Plot</b>  buttons. 
+    Each of the tools shows (1) graphics that can be downloaded as png files by clicking on the camera icon (<b> Download plot as png</b>), 
+    and (2) tables that can be downloaded by clicking on the <b> Download table</b>  button.
+
+                       <p>
+                       We have included 2 example files that can be downloaded and used as input files on Epitope Analyzer.
+                       <ul>
+                       <li>", case_1_file, ": Predicted MHC Class I epitopes from SARS-CoV-2.</li>
+                       <li>", case_2_file, ": Predicted MHC Class II epitopes from SARS-CoV-2</li>
+                       </ul> 
+                       The R scripts of Epitope Analyzer can be freely downloaded from", github_code ,"and launched locally.
+                       <p>
+                       <h4>How to cite Epitope Analyzer</h4>
+                       Paper Citation
+                       <p>
+                       <p>
+                       <h4> Contact </h4>
+                       Juan Fuxman Bass - fuxman@bu.edu
+                       <br>
+                       Luis F Soto - lufesu98@gmail.com
+                       "))))
+  })
+  # Uploading table
+  output$contents_1 <- DT::renderDataTable({
+    file <- input$input_file
     ext <- tools::file_ext(file$datapath)
     req(file)
     read_delim(file$datapath,"\t",
                escape_double = FALSE,
                trim_ws = TRUE)
     
-  }, options= list(scrollX = "300px"))
+  }, options = list(scrollX = "300px"))
   
-  #### Epitope data table (First Tab)
+  #################
+  # Uploading tab #
+  #################
   ep_data <- reactive({
-    inFile <- input$file1
-    mydata <-data.frame(read_delim(inFile$datapath,"\t",
+    
+    inFile <- input$input_file
+    df_raw_file <-data.frame(read_delim(inFile$datapath,"\t",
                                    escape_double = FALSE,
                                    trim_ws = TRUE))
-    updateCheckboxGroupInput(session = session, inputId = "allele", choices = colnames(mydata)[c(-1, -2, -3, -4)], selected = colnames(mydata)[c(-1, -2, -3, -4)][1])
-    allele_example <- colnames(mydata)[5]
+    
+    ## Rename columns
+    colnames(df_raw_file)[1:4] = c("Peptide", "Pos", "Length", "ID")
+    
+    ## Updating buttons
+    updateCheckboxGroupInput(session = session, inputId = "allele", choices = colnames(df_raw_file)[c(-1, -2, -3, -4)], selected = colnames(df_raw_file)[c(-1, -2, -3, -4)][1])
+    allele_example <- colnames(df_raw_file)[5]
     if(startsWith(toupper(allele_example), "HLA")){
       updateNumericInput(session = session, inputId = "xmin", min = 0, max = 2, value = 0)
       updateNumericInput(session = session, inputId = "xmax", min = 0, max = 2, value = 2)
       updateNumericInput(session = session, inputId = "cutoff", min = 0, max = 2, value = 2)
-      updateNumericInput(session = session, inputId = "cutpoint", min = 0, max = 2, value = 2)
-      updateNumericInput(session = session, inputId = "cutpoint2", min = 0, max = 2, value = 2)
+      updateNumericInput(session = session, inputId = "cutoff_4", min = 0, max = 2, value = 2)
       updateNumericInput(session = session, inputId = "sb_ct", min = 0, max = 2, value = 0.5)
       updateNumericInput(session = session, inputId = "wb_ct", min = 0, max = 10, value = 2)
-      updateNumericInput(session = session, inputId = "cutoff_5", min = 0, max = 10, value = 2)
+      updateNumericInput(session = session, inputId = "cutoff_6", min = 0, max = 10, value = 2)
     }else{
       updateNumericInput(session = session, inputId = "xmin", min = 0, max = 10, value = 0)
       updateNumericInput(session = session, inputId = "xmax", min = 0, max = 10, value = 10)
       updateNumericInput(session = session, inputId = "cutoff", min = 0, max = 10, value = 10)
-      updateNumericInput(session = session, inputId = "cutpoint", min = 0, max = 10, value = 10)
-      updateNumericInput(session = session, inputId = "cutpoint2", min = 0, max = 10, value = 10)
+      updateNumericInput(session = session, inputId = "cutoff_4", min = 0, max = 10, value = 10)
       updateNumericInput(session = session, inputId = "sb_ct", min = 0, max = 2, value = 2)
       updateNumericInput(session = session, inputId = "wb_ct", min = 0, max = 10, value = 10)
-      updateNumericInput(session = session, inputId = "cutoff_5", min = 0, max = 10, value = 10)
+      updateNumericInput(session = session, inputId = "cutoff_6", min = 0, max = 10, value = 10)
     }
-    updateNumericInput(session = session, inputId = "n_prots", min = 1, max = mydata %>% 
+    updateNumericInput(session = session, inputId = "n_prots", min = 1, max = df_raw_file %>% 
                          dplyr::select(ID) %>% 
                          unlist() %>% 
                          unique() %>% 
                          length(), value = 2)
-    updateSelectInput(session = session, inputId = "protein", choices = mydata %>% dplyr::select(ID) %>% unlist() %>% unique(), selected = mydata["ID"][1,])
-    updateCheckboxGroupInput(session = session, inputId = "allele2", choices = colnames(mydata)[c(-1, -2, -3, -4)], selected = colnames(mydata)[c(-1, -2, -3, -4)][1])
-    updateCheckboxGroupInput(session = session, inputId = "allele3", choices = colnames(mydata)[c(-1, -2, -3, -4)], selected = colnames(mydata)[c(-1, -2, -3, -4)][1:5])
+    updateSelectInput(session = session, inputId = "protein_4", choices = df_raw_file %>% dplyr::select(ID) %>% unlist() %>% unique(), selected = df_raw_file["ID"][1,])
+    updateCheckboxGroupInput(session = session, inputId = "allele_4", choices = colnames(df_raw_file)[c(-1, -2, -3, -4)], selected = colnames(df_raw_file)[c(-1, -2, -3, -4)][1])
+    updateCheckboxGroupInput(session = session, inputId = "allele_6", choices = colnames(df_raw_file)[c(-1, -2, -3, -4)], selected = colnames(df_raw_file)[c(-1, -2, -3, -4)][1:5])
     updateNumericInput(session = session,
                        inputId = "min_al",
-                       max = length(colnames(mydata)[c(-1, -2, -3, -4)]),
-                       value = length(colnames(mydata)[c(-1, -2, -3, -4)])-1)
-    return(mydata)
-  })
-  
-  # Second tab
-  sub_data <- reactive({
+                       max = length(colnames(df_raw_file)[c(-1, -2, -3, -4)]),
+                       value = length(colnames(df_raw_file)[c(-1, -2, -3, -4)])-1)
     
-    if (length(input$allele != 1)){
-      ep_data3 <- ep_data()
-      ep_data3 <- ep_data3[order(ep_data3[,'Peptide']),]
-      ep_data3 <- ep_data3[!duplicated(ep_data3$Peptide),]
-      ep_data3 <- ep_data3 %>% select(input$allele)
-      apply(ep_data3,1, max)
-    }else{
-      ep_data3 <- ep_data()
-      ep_data3 <- ep_data3[order(ep_data3[,'Peptide']),]
-      ep_data3 <- ep_data3[!duplicated(ep_data3$Peptide),]
-      ep_data3$input$allele
-    }
+    return(df_raw_file)
+  })
+
+  
+  ####################
+  # Distribution tab #
+  ####################
+  
+  # Text
+  output$text_2 <- renderUI({
+    list(p(HTML("Epitope Distribution shows (1) the distribution of the number of unique epitopes that were predicted to bind
+    to selected MHC alleles within an %rank interval and (2) a heatmap showing the presence of epitopes across different proteins. 
+    To obtain the distribution of epitopes, users should select one or more MHC alleles, set the min %rank and the max%rank to 
+    consider a peptide as an epitope, and select the plot type which could be a histogram or cumulative histogram. 
+    The histogram and cumulative histogram plots show the %rank intervals on the x-axis and the number of epitopes
+    on the y-axis. The density is represented with a red line in the histogram plot. To show the epitopes present across
+    multiple proteins, users need to indicate a minimum number of proteins in which the epitopes are contained.
+    The Shiny app will show a heatmap where the epitopes are on the x-axis while proteins are on the y 
+    axis. The cells are colored with blue or white indicating the presence or absence of the epitope, respectively.
+    <br>
+    <h4> Parameters </h4>
+    <ul>
+     <li> <b>Relation among MHC alleles:</b> When multiple alleles are selected, users must indicate if they are interested in shared epitopes that bind all the selected MHC alleles (AND) or epitopes that bind at least one of the MHC alleles selected (OR). </li>
+     <li> <b>MHC alleles:</b> List of MHC alleles obtained from the input file. Users can choose more than one allele. (Default = first allele) </li>
+    <li> <b>Min % rank:</b> Minimum %rank to filter the epitopes. (Default = 0)</li>
+     <li> <b>Max % rank:</b> Maximum %rank to consider a peptide as predicted epitope. (Default MHC Class I = 2, MHC Class II = 10). </li>      
+     <li> <b>Step:</b> Width of the bins in the histogram plot. (Default = 0.1)</li>
+     <li> <b>Plot type:</b> The distribution of epitopes can be shown as a histogram or a Cumulative histogram. If histogram is selected, the density is represented with a red line.</li>  
+     <li> <b>Min number of proteins:</b> Minimum number of proteins where epitopes are conserved (Default = 2). </li>     
+     </ul>")))})
+  
+  # Reactive
+  reactive_2 <- reactiveValues(doTable = FALSE, doPlot = FALSE)
+  
+  observeEvent(input$go_2_1, {
+    reactive_2$doTable <- input$go_2_1
+    reactive_2$doPlot <- FALSE})
+  
+  observeEvent(input$go_2_2, {
+    reactive_2$doTable <- input$go_2_1
+    reactive_2$doPlot <- input$go_2_2})
+  
+  allele_react <- eventReactive(input$go_2_1, {input$allele})
+  xmin_react <- eventReactive(input$go_2_1, {input$xmin})
+  xmax_react <- eventReactive(input$go_2_1, {input$xmax})
+  step_react <- eventReactive(input$go_2_1, {input$step})
+  conditional_plot_react <-eventReactive(input$go_2_1, {input$conditional_plot})
+  conditional_react <- eventReactive(input$go_2_1, {input$conditional})
+  n_prots_react <- eventReactive(input$go_2_2, {input$n_prots})
+  
+  # Parsing
+  data_values <- reactive({
+    
+    # Validation files
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Updating click button
+    if (reactive_2$doTable == FALSE) return()
+    allele <- allele_react()
+    conditional <- conditional_react()
+    
+    ep_data3 <- ep_data() %>% 
+      dplyr::select(Peptide, allele) %>% 
+      unique() 
+    
+    if (length(allele) != 1){
+      if ( conditional == "AND"){
+        ep_data3$plot_score <- apply(ep_data3[, allele], 1, max)
+      } else if(conditional == "OR"){
+        ep_data3$plot_score <- apply(ep_data3[, allele], 1, min)
+      }
+    } else{
+      ep_data3$plot_score <- ep_data3[,allele]}
+    
+    return(ep_data3)
   })
   
+  # Parsing
   f_table <- reactive({
-    if (length(input$allele != 1)){
-      ep_data2 <- ep_data() %>% select(input$allele)
-      ep_data4 <- ep_data()
-      ep_data4$Max_score <- apply(ep_data2,1,max)
-    }else{
-      ep_data4 <- ep_data() %>% select(input$allele)
-    }
-    ep_data4 <- ep_data4 %>% filter(Max_score <= input$xmax & Max_score >= input$xmin)
-    ep_data4$Length <- nchar(ep_data4$Peptide)
-    ep_data4 <- ep_data4[,c(1,3,2,4)]
-    return(ep_data4)
+    
+    # Validation files
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Updating click button
+    if (reactive_2$doTable == FALSE) return()
+    allele <- allele_react()
+    xmin <- xmin_react()
+    xmax <- xmax_react()
+    
+    data_values <- data_values()
+    tmp_data <- ep_data()
+
+    keep = tmp_data$Peptide %in% data_values$Peptide[data_values$plot_score > xmin & data_values$plot_score <= xmax]
+    data_keep = tmp_data[keep, c(1,2,4)]
+    data_keep$Peptide_length = nchar(data_keep[,1])
+    rownames(data_keep) <- NULL
+    return(data_keep)
   })
   
+  # Table
+  output$table_2 <- DT::renderDataTable({
+    
+    # Validation files
+    validate(
+      need(input$input_file != "", " ")
+    )
+    ep_data3 <- ep_data()
+    
+    # Updating click button
+    if (reactive_2$doTable == FALSE) return()
+    f_table()}, rownames = FALSE, options = list(scrollX = "300px"))
+  
+  # Plot
+  output$plot_2_1 <- renderPlotly({
+    
+    # Validation files
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Updating click button
+    if (reactive_2$doTable == FALSE) return()
+    allele <- allele_react()
+    xmin <- xmin_react()
+    xmax <- xmax_react()
+    step <- step_react()
+    conditional_plot <- conditional_plot_react()
+    plot_values <- data_values()$plot_score
+    
+    if(conditional_plot == "Histogram"){
+      cumulative = FALSE
+      fit <- density(plot_values[plot_values <=xmax & plot_values > xmin])
+      plot_ly(x = plot_values,
+              type = "histogram",
+              opacity = 0.8,
+              hoverinfo = "y",
+              marker = list(color = "ligthblue", line = list(cauto = FALSE,width= 1, color= "black", cmid = 2)),
+              xbins = list(start = xmin, end = xmax, size = step),
+              cumulative = list(enabled = FALSE)) %>% 
+        add_trace(x = fit$x, y = fit$y, type = "scatter", mode = "lines", fill = "tozeroy", yaxis = "y2",
+                  fillcolor = "transparent",
+                  marker = list(color = "red")) %>% 
+        layout(xaxis = list(title = "% Rank Predictor"),
+               yaxis = list(title = "Number of epitopes"),
+               yaxis2 = list(overlaying = "y", side = "right", position = 0.9),
+               showlegend = FALSE)
+    }else{
+      cumulative = TRUE
+      plot_ly(x = plot_values,
+              type = "histogram",
+              opacity = 0.8,
+              hoverinfo = "y",
+              marker = list(color = "ligthblue", line = list(cauto = FALSE,width= 1, color= "black", cmid = 2)),
+              xbins = list(start = xmin, end = xmax, size = step),
+              cumulative = list(enabled = cumulative)) %>%
+        layout(xaxis = list(title = "% Rank Predictor"),
+               yaxis = list(title = "Number of epitopes"))
+    }
+  
+    })
+  
+  
+  # Plot
+  output$plot_2_2 <- renderPlotly({
+    
+    # Validation files
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Updating click button
+    if (reactive_2$doPlot == FALSE) return()
+    
+    n_prots <- n_prots_react()
+    
+    table <- f_table() 
+    x_peptides <- table %>% 
+      select(Peptide, ID) %>% 
+      unique() %>% 
+      group_by(Peptide) %>% 
+      summarise(conteo = n()) %>% 
+      as.data.frame() %>% arrange(desc(conteo)) %>%
+      filter(conteo >= n_prots) %>% 
+      select(Peptide)
+    
+    if (nrow(x_peptides) == 0){
+      y_proteins = ""
+    }else{
+      keep = table$Peptide %in% x_peptides$Peptide
+      y_proteins = table[keep, ] %>% dplyr::select(ID) %>% unlist() %>% unique() 
+    }
+    
+    
+    p <- ggplot(table) + 
+      geom_tile(aes(x = Peptide,
+                    y = ID,
+                    fill = "blue2",
+                    text = paste("Protein:", ID,
+                                 "<br>",
+                                 "Epitope:", Peptide)), alpha = 0.7 ,width = 0.9, size = 1.2, height = 0.9, color = "black")+
+      theme_classic(base_size = 12)+
+      scale_fill_manual(values = c("blue2"))+
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+            legend.position = "none") +
+      xlab("")+
+      ylab("") + 
+      xlim(x_peptides$Peptide)+
+      ylim(y_proteins)
+    
+    ggplotly(p, tooltip = c("text")) 
+    
+  })
+  
+  # Download button
   output$downloadData2 <- downloadHandler(
     filename = function(){
       paste("Epitope_Distribution.txt")
@@ -247,77 +507,104 @@ server <- function(session, input, output){
       write.table(f_table(), file, sep = "\t",row.names = FALSE, quote = FALSE)
     })
   
-  output$plot1 <- renderPlotly({
-    sub_data <- sub_data()
-    plot_ly(x = sub_data,
-            type = "histogram",
-            opacity = 0.8,
-            hoverinfo = "y",
-            marker = list(color = "red", line = list(cauto = FALSE,width= 1, color= "black", cmid = 2)),
-            xbins = list(start = input$xmin, end = input$xmax, size = input$step),
-            cumulative = list(enabled = TRUE)) %>% 
-      layout(xaxis = list(title = "% Rank Predictor"),
-             yaxis = list(title = "Number of epitopes"))})
   
-  output$plot1_1 <- renderPlotly({
-    table <- f_table() 
-    x_peptides <- table %>% 
-      select(Peptide, ID) %>% 
-      unique() %>% 
-      group_by(Peptide) %>% 
-      summarise(conteo = n()) %>% 
-      as.data.frame() %>% arrange(desc(conteo)) %>% 
-      filter(conteo >= input$n_prots) %>% 
-      select(Peptide) %>% unlist()
-    
-    p <- ggplot(table) + 
-      geom_tile(aes(x = Peptide, y = ID, fill = "black"), alpha = 0.8 ,width = 0.9, height = 0.9, color = "black")+
-      theme_classic(base_size = 12)+
-      scale_fill_manual(values = c("black"))+
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
-            legend.position = "none") +
-      xlab("")+
-      ylab("") + 
-      xlim(x_peptides)
-    
-    ggplotly(p)
-    
-    })
+  ###############
+  # Density tab #
+  ###############
   
-  output$table_1 <- DT::renderDataTable({
-    f_table()},options= list(scrollX = "300px"))
+  # Text input
+  output$text_3 <- renderUI({
+    list(p(HTML("Epitope Density shows a scatter plot where the protein length in amino acids 
+    is on the x-axis and the number of epitopes is on the y-axis. Hovering over each point shows the 
+    name of the protein, number of epitopes, length of the protein, and the epitope density. The epitope
+    density is calculated as the number of epitopes divided by the length of the proteins. It also shows
+    a heatmap representing the number (or density) of epitopes in each protein across each allele.
+    <br>
+    To obtain the scatter plot, users must indicate the maximum cutoff %rank to consider a peptide as an
+    epitope and click on the <b>Run analysis</b> button. This will produce a scatter plot and a table containing the ID of the proteins,
+    their length in amino acids, the number of epitopes, and the epitope density. Clicking on any row of the table will highlight 
+    the point in the scatter plot. 
+    <br>
+    To obtain the heatmap, in addition to the maximum cutoff%rank, users must select 
+    the plot-type (heatmap or bar plot) and the fill-type (by number or density of epitopes). We recommend using the 
+    plot-type <b>heatmap</b> when several proteins are analyzed. When heatmap is selected, this shows the alleles on the x-axis 
+    and the proteins on the y-axis. The color intensity indicates the log 10 of the number or the density of epitopes. When
+    <b>barplot</b> is selected, each protein is represented as a bar while alleles are on the x-axis and the number (or density) 
+    of epitopes are on the y-axis. Hovering over each bar (or cell in the heatmap) will show the protein ID, the allele, the 
+    number of epitopes, the length of the protein, and the density of epitopes.
+
+    <br>
+    <h4> Parameters </h4>
+    <ul>
+     <li> <b>Cutoff % rank:</b> Maximum %rank to consider a peptide as predicted epitope. (Default MHC Class I = 2, MHC Class II = 10). </li>      
+     <li> <b>Color by:</b> Fill heatmap by number or density of epitopes.(Default = Epitopes Number)</li>
+     <li> <b>Plot type:</b> Heatmap is recommended for several proteins, while bar plot is recommended for few proteins. (Default = Heatmap)</li>     
+     </ul>")))})
   
-  output$text_1 <- renderUI({
-    list(p(HTML("Epitopes Distribution allows to see the distribution of the number of epitopes with less % binding affinity
-                than <b> Max value </b> but greater than <b> Min value </b>. Users can also set the <b> MHC Allele</b>" )),
-         p(HTML("<b>MHC Allele:</b> MHC alleles which were used in the prediction of epitopes. First allele is set by default. Multiple MHC Alleles can be chosen.
-                <p>
-                <b> Min value:</b> The lowest % binding affinity to be considered in the filter of epitopes. 0 by default.
-                <p>
-                <b> Max value:</b> The highest % binding affinity to be considered in the filter of epitopes. 2 by default.
-                <p>
-                <b> Step:</b> Value to set the width of bars. 0.1 by default.
-                " )))})
+  # Reactive
+  reactive_3 <- reactiveValues(doTable = FALSE, doPlot = FALSE)
   
-  # Third tab
+  observeEvent(input$go_3_1, {
+    reactive_3$doTable <- input$go_3_1
+    reactive_3$doPlot <- FALSE})
   
+  observeEvent(input$go_3_2, {
+    reactive_3$doTable <- input$go_3_1
+    reactive_3$doPlot <- input$go_3_2})
+  
+  cutoff_3_react <- eventReactive(input$go_3_1, {input$cutoff})
+  cutoff_3_2_react <- eventReactive(input$go_3_2, {input$cutoff})
+  
+  fill_type_react <- eventReactive(input$go_3_2, {input$fill_type})
+  plot_type_react <- eventReactive(input$go_3_2, {input$plot_type})
+  
+  # Parsing data
   d_table <- reactive({
+    
+    # Validation files
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Updating click button
+    if (reactive_3$doTable == FALSE) return()
+    cutoff = cutoff_3_react()
     ep_data5 <- ep_data()
+    
+    
     ep_data5$min <- apply(ep_data5[seq(5, ncol(ep_data5))], 1, min)
     ep_data5$min <- as.numeric(ep_data5$min)
-    ep_data5 <- ep_data5 %>% dplyr::filter(min <= input$cutoff) %>% dplyr::group_by(ID,Length) %>% dplyr::summarize(count=n())
+    ep_data5 <- ep_data5 %>% dplyr::filter(min <= cutoff) %>% dplyr::group_by(ID,Length) %>% dplyr::summarize(count=n())
     ep_data5$Density <- round(ep_data5$count/ep_data5$Length,2)
     return(ep_data5)
   })
   
-  output$table_2 <- DT::renderDataTable({
-    ep_data5 <- d_table()
-    DT::datatable(ep_data5,options= list(scrollX = "300px"))})
+  # Table
+  output$table_3 <- DT::renderDataTable({
+    
+    # Validation files
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Updating click button
+    if (reactive_3$doTable == FALSE) return()
+    ep_data3 <- d_table()
+    DT::datatable(ep_data3, rownames = FALSE, options= list(scrollX = "300px"))})
   
-  
-  output$plot2 <- renderPlotly({
+  # Plot
+  output$plot_3_1 <- renderPlotly({
+    
+    # Validation files
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Updating click button
+    if (reactive_3$doTable == FALSE) return()
     ep_data5 <- d_table()
-    s = input$table_2_rows_selected
+    
+    s = input$table_3_rows_selected
     y_min_value <- min(ep_data5$count)
     y_max_value <- max(ep_data5$count)
     x_min_value <- min(ep_data5$Length)
@@ -343,7 +630,7 @@ server <- function(session, input, output){
                              "Length: ", ep_data5[ep_data5$ID  %in%  ids$ID,]$Length, "aminoacids",
                              "<br>",
                              "Density: ", round(ep_data5[ep_data5$ID %in% ids$ID,]$Density, 2))) %>% 
-                            
+      
       add_trace(data = ep_data5[!(ep_data5$ID  %in%  ids$ID),],
                 x = ~Length, y = ~count,
                 marker = list(size = 10,
@@ -360,14 +647,126 @@ server <- function(session, input, output){
                              "<br>",
                              "Length: ", ep_data5[!(ep_data5$ID  %in%  ids$ID),]$Length, "aminoacids",
                              "<br>",
-                             "Density: ", round(ep_data5[!(ep_data5$ID %in% ids$ID),]$Density, 2)))%>%
+                             "Density: ", round(ep_data5[!(ep_data5$ID %in% ids$ID),]$Density, 2))) %>%
       
       layout(title = "Correlation N° Epitopes and Proteins Length",
              yaxis = list(title = "N of epitopes",tickmode = "linear", dtick = y_step),
              xaxis = list(title = "Protein Length", tickmode = "linear", dtick = x_step))
-
+    
   })
   
+  # Plot
+  output$plot_3_2 <- renderPlotly({
+    
+    # Validation files
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Updating click button
+    if (reactive_3$doPlot == FALSE) return()
+    cutoff = cutoff_3_2_react()
+    table <- ep_data()
+    fill_type <- fill_type_react()
+    
+    table_melt <- melt(table, id.vars = c("Pos", "Length", "ID", "Peptide"))
+    protein_length <- table_melt %>% select(ID, Length) %>% unique()
+    table_summarized <- table_melt %>% group_by(ID, variable) %>% filter(value <= cutoff) %>% 
+      summarise(count = n()) %>% as.data.frame()
+    index = match(table_summarized$ID, protein_length$ID)
+    
+    if (fill_type == "Epitopes Number"){
+      table_summarized$Length <- protein_length$Length[index] 
+      table_summarized$Density <- table_summarized$count/table_summarized$Length
+      table_summarized$type_fill <- log10(table_summarized$count)
+    }
+    else{
+      table_summarized$Length <- protein_length$Length[index] 
+      table_summarized$Density <- table_summarized$count/table_summarized$Length
+      table_summarized$type_fill <- log10(table_summarized$count/table_summarized$Length)
+    }
+    
+    y_ids <- table_summarized %>% group_by(ID) %>% summarise(accumulated = sum(10**type_fill)) %>% 
+      arrange(desc(accumulated)) %>% select(ID) %>% unlist()
+    x_ids <- table_summarized %>% group_by(variable) %>% summarise(accumulated = sum(10**type_fill)) %>% 
+      arrange(desc(accumulated)) %>% select(variable) %>% unlist() %>% as.character()
+    
+    plot_type<- plot_type_react()
+    if (plot_type == "Bar plot"){
+      if(fill_type == "Epitopes Number"){
+        p <-ggplot(table_summarized)+ 
+          geom_bar(stat = "identity" ,
+                   color ="black",
+                   position = "dodge",
+                   width = 0.85,
+                   aes(x = variable,
+                       y = count,
+                       fill = factor(ID, levels = y_ids),
+                       text = paste("Protein:", ID,
+                                    "<br>",
+                                    "Allele:", variable,
+                                    "<br>",
+                                    "N_epitopes: ", count,
+                                    "<br>",
+                                    "Length: ", Length,
+                                    "<br>",
+                                    "Density: ", round(Density, 2))))+
+          theme_classic(base_size = 12)+
+          theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+                legend.title = element_blank())+
+          xlab("") + ylab("") + 
+          xlim(x_ids)
+      }else{
+        p <-ggplot(table_summarized)+ 
+          geom_bar(stat = "identity" ,
+                   color ="black",
+                   position = "dodge",
+                   width = 0.85,
+                   aes(x = variable,
+                       y = Density, 
+                       text = paste("Protein:", ID,
+                                    "<br>",
+                                    "Allele:", variable,
+                                    "<br>",
+                                    "N_epitopes: ", count,
+                                    "<br>",
+                                    "Length: ", Length,
+                                    "<br>",
+                                    "Density: ", round(Density, 2)),
+                       fill = factor(ID, levels = y_ids)))+
+          theme_classic(base_size = 12)+
+          theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+                legend.title = element_blank())+
+          xlab("") + ylab("") + 
+          xlim(x_ids)
+      }
+      
+    }else{
+      p <- ggplot(table_summarized) + 
+        geom_tile(aes(x = variable, 
+                      y = ID, 
+                      fill = type_fill, 
+                      text = paste("Protein:", ID,
+                                   "<br>",
+                                   "Allele:", variable,
+                                   "<br>",
+                                   "N_epitopes: ", count,
+                                   "<br>",
+                                   "Length: ", Length,
+                                   "<br>",
+                                   "Density: ", round(Density, 2))))+
+        theme_classic(base_size = 12)+
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+              legend.position = "none")+
+        scale_fill_gradientn(colors = c("white","blue"),
+                             limits = c(min(table_summarized$type_fill)-0.1, round(max(table_summarized$type_fill),2) +0.1))+
+        xlab("") + ylab("") +ylim(y_ids) + xlim(x_ids) 
+    }
+    
+    ggplotly(p, tooltip = c("text")) 
+  })
+  
+  # Download button
   output$downloadData3 <- downloadHandler(
     filename = function(){
       paste("Density_Protein.txt")
@@ -376,45 +775,83 @@ server <- function(session, input, output){
       write.table(d_table(), file, sep = "\t",row.names = FALSE, quote = FALSE)
     })
   
-  output$text_2 <- renderUI({
-    list(p(HTML("Density Protein allows the know which proteins have more proportion of epitopes and see if there is a relatrion between the length of the protein and the number of predicted epitopes.
-                Click on rows will highlight the protein." )),
-         p(HTML("<b>Cutoff:</b> The highest % Binding Affinity to be considered as predicted epitope. 2 by default.
-                " )))})
+  ################
+  # Location tab #
+  ################
   
-  # Fourth tab
-  v_reactive <- reactiveValues(doPlot = FALSE)
+  # Text
+  output$text_4 <- renderUI({
+    list(p(HTML("Epitope Location shows the location of epitopes within the protein (blue bar).
+    Epitopes are represented on a color gradient from yellow to red reflecting the number of MHC
+    alleles they are predicted to bind to. Hovering on each epitope will show the amino acid sequence,
+    the position within the protein, and the MHC alleles that are predicted to recognize it. Users must
+    select the protein, set a cutoff %rank to filter epitopes, and indicate the MHC alleles of interest.
+    When multiple alleles are selected, users also need to specify if they are interested in epitopes that
+    are predicted to bind all the selected alleles (AND) or at least one of the selected alleles (OR). 
+    This tool also shows a table containing the sequence of the epitope, the start and end amino acid position
+    within the protein, the alleles, and the number of alleles to which they were predicted to bind. This
+    analysis may take a few minutes depending on the number of epitopes and the length of the protein.
+
+    <br>
+    <h4> Parameters </h4>
+    <ul>
+     <li> <b>Protein:</b> List of proteins obtained from the input file. Users must select a protein to be analyzed. (Default = first protein)</li>    
+     <li> <b>Cutoff % rank:</b> Maximum %rank to consider a peptide as predicted epitope. (Default MHC Class I = 2, MHC Class II = 10). </li>      
+     <li> <b>Condition over MHC alleles:</b> When multiple alleles are selected, users must indicate if they are interested in shared epitopes that bind all the selected MHC alleles (AND) or epitopes that bind at least one of the MHC alleles selected (OR). </li>
+     <li> <b>MHC alleles:</b> List of MHC alleles obtained from the input file. Users can choose more than one allele. (Default = first allele) </li>
+     </ul>")))})
   
-  observeEvent(input$run, {
-    v_reactive$doPlot <- input$run
-  }, once = TRUE)
+  # Reactive
+  reactive_4 <- reactiveValues(doPlot = FALSE)
+  observeEvent(input$go_4, {reactive_4$doPlot <- input$go_4})
+  allele_4_react <- eventReactive(input$go_4, {input$allele_4})
+  cutoff_4_react <- eventReactive(input$go_4, {input$cutoff_4})
+  protein_4_react <- eventReactive(input$go_4, {input$protein_4})
+  conditional_4_react <- eventReactive(input$go_4, {input$conditional_4})
   
-  alleles4 <- eventReactive(input$run, {
-    input$allele2
-  })
-  cutoff4 <- eventReactive(input$run, {
-    input$cutpoint
-  })
-  protein4 <- eventReactive(input$run, {
-    input$protein
-  })
-  
-  
+  # Parse
   location_table <- reactive({
     
-    peptide_counts = 
-      ep_data() %>% 
-      filter(ID == protein4()) %>% 
-      select(Peptide, Pos, Length, all_of(alleles4())) %>% 
+    # Validation files
+    validate(
+      need(input$input_file != "", " ")
+    )
+    ep_data5 <- ep_data()
+    
+    if (reactive_4$doPlot == FALSE) return()
+    allele_4 <- allele_4_react()
+    cutoff_4 <- cutoff_4_react()
+    protein_4 <- protein_4_react()
+    conditional_4 <- conditional_4_react()
+
+    # Parse
+    peptide_counts = ep_data() %>% 
+      filter(ID == protein_4) %>% 
+      select(Peptide, Pos, Length, allele_4)
+    
+    if (length(allele_4) != 1){
+      if ( conditional_4 == "AND"){
+        peptide_counts$score <- apply(peptide_counts[, allele_4], 1, max)
+      } else if(conditional_4 == "OR"){
+        peptide_counts$score <- apply(peptide_counts[, allele_4], 1, min)
+      }
+    }
+    else{
+      peptide_counts$score <- peptide_counts[,allele_4]
+    }
+    peptide_counts <- peptide_counts %>% filter(score <= cutoff_4) %>% 
+      dplyr::select(Peptide, Pos, Length, allele_4) %>% 
       melt(id.vars = c("Peptide", "Pos", "Length")) %>% 
-      filter(value <= cutoff4()) %>% 
       group_by(Peptide) %>% 
-      mutate(count = sum(value <= cutoff4()),
+      filter(value <= 2) %>% 
+      mutate(count = sum(value <= cutoff_4),
              alleles = paste(variable, collapse = " - ")) %>% 
       select(Peptide, count, alleles) %>% as.data.frame()
-
+    
+    if(nrow(peptide_counts)==0) return()
+    
     ep_data2 = ep_data() %>%
-      filter(ID == protein4()) %>% 
+      filter(ID == protein_4) %>% 
       select(Peptide, Pos, Length)
     
     index = match(ep_data2$Peptide, peptide_counts$Peptide)
@@ -477,32 +914,37 @@ server <- function(session, input, output){
     
     return(local_table)
   })
-
-  output$downloadData4 <- downloadHandler(
-    filename = function(){
-      paste("Epitopes_Plot_Location.txt")
-    },
-    content = function(file){
-      write.table(location_table(), file, sep = "\t",row.names = FALSE, quote = FALSE)
-    })
   
-  output$table_3 <- DT::renderDataTable({
-    if (v_reactive$doPlot == FALSE) 
-      return(DT::datatable(ep_data()[,3:4] %>% unique(), rownames = FALSE))
+  # Table
+  output$table_4 <- DT::renderDataTable({
     
+    # Validation files
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Updating click button
+    if (reactive_4$doPlot == FALSE) return()
     local_table <- location_table()
+    if (is.null(local_table)) return()
     local_table <- local_table[-1,c(4,2,3,7,8)]
     DT::datatable(local_table, rownames = FALSE,options= list(scrollX = "300px"))})
   
-  output$text_3 <- renderUI({
-    list(p(HTML("Location of all epitopes are plotted along the full protein. Each epitope are represented as red bar while the protein is indicated by a blue bar.
-                Additionally, some filters could be applied such as selecting the protein, the cutoff and the MHC Allele.
-                The output is described with a table which contains information of the filtered epitopes and the plot of locaation epitopes")))})
-  
-  output$plot3 <- renderPlotly({
-    if (v_reactive$doPlot == FALSE) return()
+  # Plot
+  output$plot_4 <- renderPlotly({
     
+    # Validation files
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    ep_data5 <- ep_data()
+    
+    # Updating click button
+    if (reactive_4$doPlot == FALSE) return()
     local_table <- location_table()
+    if (is.null(local_table)) return()
+    
     local_table$count <- as.numeric(local_table$count) 
     
     if (nrow(local_table) == 1){
@@ -569,64 +1011,106 @@ server <- function(session, input, output){
     
   })
   
-  # Fifth tab
-  ep_data4 <- shiny::reactive({
+  # Download button
+  output$downloadData4 <- downloadHandler(
+    filename = function(){
+      paste("Epitopes_Plot_Location.txt")
+    },
+    content = function(file){
+      write.table(location_table(), file, sep = "\t",row.names = FALSE, quote = FALSE)
+    })
+  
+  
+  ###################
+  # Promiscuity tab #
+  ###################
+  
+  # Text
+  output$text_5 <- renderUI({
+    list(p(HTML("Epitope Promiscuity shows epitopes predicted to bind a minimum
+    number of MHC alleles. The tool depicts a heatmap where alleles are on the x-axis
+    and epitopes are on the y-axis. Users should set the strong and weak binding 
+    cutoff %rank to filter the strong binder and weak binder epitopes. Strong binder epitopes (SB) are the 
+    epitopes with a %rank less or equal than the strong binding cutoff %rank. 
+    Weak binder epitopes (WB) are the epitopes with a %rank greater than the strong binding
+    cutoff %rank but less or equal than the weak binding cutoff %rank. In the heatmap, 
+    SB and WB epitopes are colored in red and orange, respectively. Users also 
+    need to select a minimum number of MHC alleles to filter and show only epitopes 
+    that are predicted to bind to at least this number of alleles. This tool also shows
+    a table containing the amino acid sequence, the position within the protein, the ID 
+    of the protein, and the number of alleles to which they are predicted to bind.
+
+    <br>
+    <h4> Parameters </h4>
+    <ul>
+     <li> <b>Minimum number of alleles:</b> This indicates the minimum number of MHC alleles that an epitope needs to bind to be shown in the heatmap.</li>    
+     <li> <b>Strong Binding Cutoff % rank:</b> Epitopes with a %rank lower or equal than this cutoff are considered as strong binder epitopes (SB). </li>      
+     <li> <b>Weak Binding Cutoff %rank:</b> Epitopes with a %rank lower or equal than this cutoff but greater than Strong Binding Cutoff are considered weak binder epitopes (WB). </li>
+     </ul>")))})
+  
+  # Reactive
+  reactive_5 <- reactiveValues(doPlot = FALSE)
+  observeEvent(input$go_5, {reactive_5$doPlot <- input$go_5})
+  wb_ct_react <- eventReactive(input$go_5, {input$wb_ct})
+  sb_ct_react <- eventReactive(input$go_5, {input$sb_ct})
+  min_al_react <- eventReactive(input$go_5, {input$min_al})
+  
+  # Parsing
+  parsed_data5 <- shiny::reactive({
+    
+    # Validation of input file
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Update click button
+    if (reactive_5$doPlot == FALSE) return()
     ep_data5 <- ep_data()
-    ep_data5$prom <- rowSums(ep_data5[,seq(5, ncol(ep_data5))] < input$cutpoint2)
-    ep_data5 <- ep_data5 %>% filter(prom >=input$min_al) 
+    wb_ct = wb_ct_react()
+    sb_ct = sb_ct_react()
+    min_al = min_al_react()
+    
+    # Parse
+    ep_data5$prom <- rowSums(ep_data5[,seq(5, ncol(ep_data5))] < wb_ct)
+    ep_data5 <- ep_data5 %>% filter(prom >= min_al) 
     ids <- ep_data5 %>% select(Peptide) %>% unlist()
     ep_data5 <- ep_data5[order(ep_data5[,"prom"], decreasing = TRUE),]
     ep_data5 <- ep_data5 %>% select("Peptide", "Pos", "Length", "ID", "prom")
     
   })
-  output$table_4 <- DT::renderDataTable({
-    ep_data4()
-  },options= list(scrollX = "300px"))
   
-  output$downloadData5 <- downloadHandler(
-    filename = function(){
-      paste("Epitope_promiscuity.txt")
-    },
-    content = function(file){
-      write.table(ep_data4(), file, sep = "\t",row.names = FALSE, quote = FALSE)
-      
-    })
-  
-  output$plot4_4 <- renderPlotly({
-    table <- ep_data()
-    table_melt <- melt(table, id.vars = c("Pos", "Length", "ID", "Peptide"))
-    protein_length <- table_melt %>% select(ID, Length) %>% unique()
-    table_summarized <- table_melt %>% group_by(ID, variable) %>% filter(value <= input$cutpoint2) %>% 
-      summarise(count = n()) %>% as.data.frame()
-    index = match(table_summarized$ID, protein_length$ID)
-    table_summarized$Length <- protein_length$Length[index]
-    table_summarized$Density = table_summarized$count/table_summarized$Length
-    p <- ggplot(table_summarized) + 
-      geom_tile(aes(x = variable, 
-                    y = ID, 
-                    fill = Density, 
-                    text = paste("Protein:", ID,
-                                 "<br>",
-                                 "Allele:", variable,
-                                 "<br>",
-                                 "N_epitopes: ", count,
-                                 "<br>",
-                                 "Length: ", Length,
-                                 "<br>",
-                                 "Density: ", round(Density, 2))))+
-      theme_classic(base_size = 12)+
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
-            legend.position = "none")+
-      scale_fill_gradientn(colors = c("white","black"),
-                           limits = c(0, round(max(table_summarized$Density),2) +0.01))+
-      xlab("") + ylab("")
+  # Table
+  output$table_5 <- DT::renderDataTable({
     
-    ggplotly(p, tooltip = c("text")) 
-  })
-  output$plot4 <- renderPlotly({
+    # Validation of input file
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Update click button
+    if (reactive_5$doPlot == FALSE) return()
+    parsed_data5()
+    
+  }, rownames = FALSE, options = list(scrollX = "300px"))
+  
+  # Plot
+  output$plot_5 <- renderPlotly({
+    
+    # Validation of input file
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Update click button
+    if (reactive_5$doPlot == FALSE) return()
+    wb_ct = wb_ct_react()
+    sb_ct = sb_ct_react()
+    min_al = min_al_react()
+    
+    # Parse
     ep_data5 <- ep_data()
-    ep_data5$prom <- rowSums(ep_data5[,seq(5, ncol(ep_data5))] < input$cutpoint2)
-    ep_data5 <- ep_data5 %>% filter(prom >= input$min_al) 
+    ep_data5$prom <- rowSums(ep_data5[,seq(5, ncol(ep_data5))] < wb_ct)
+    ep_data5 <- ep_data5 %>% filter(prom >= min_al) 
     ids <- ep_data5 %>% select(Peptide) %>% unlist()
     ep_data5 <- ep_data5[order(ep_data5[,"prom"], decreasing = TRUE),]
     asd<- factor(levels= ep_data5$Peptide,
@@ -636,9 +1120,9 @@ server <- function(session, input, output){
     mdata <- mdata[!duplicated(mdata$Peptide),]
     mdata <- melt(mdata, id=c("Peptide", "Pos", "Length", "ID"))
     
-    mdata$value2[mdata$value <= input$wb_ct & mdata$value > input$sb_ct] = "WB"
-    mdata$value2[mdata$value <= input$sb_ct] = "SB"
-    mdata$value2[mdata$value > input$wb_ct] = "NA"
+    mdata$value2[mdata$value <= wb_ct & mdata$value > sb_ct] = "WB"
+    mdata$value2[mdata$value <= sb_ct] = "SB"
+    mdata$value2[mdata$value > wb_ct] = "NA"
     mdata$value2 <- as.factor(mdata$value2)
     
     p <-ggplot(mdata) + geom_tile(aes(x=variable, y=Peptide, fill=value2, cutoff = value), width = 0.9, height=0.9, color ="black", size= 0.3) +
@@ -650,53 +1134,76 @@ server <- function(session, input, output){
     ggplotly(p, tooltip = c("cutoff", "y"))
     
   })
-  output$text_4 <- renderUI({
-    list(p(HTML("Epitope Promiscuity shows a table where the epitopes are filtered based on a <b>cutoff</b> and the number of alleles to be bound is indicated.
-                It also shows a heatmap where Strong Binding epitopes <b>(SB)</b> and Weak Binding epitopes <b>(WB)</b> are colored in red and orange, respectively.
-                SB and WB are set based on the <b>Strong Binder cutoff</b>  and <b>Weak Binder cutoff </b>." )),
-         p(HTML("<b>Cutoff:</b> The highest % Binding Affinity to be considered as predicted epitope.
-                <p>
-                <b>Minimum number of alleles</b>: A minimum number of alleles can be chosen to not show unnecessary epitopes.
-                <p>
-                <b> Strong Binding Cutoff </b>: Epitopes with % Rank Binding affinity lower or equal than this cutoff are considered as SB. 
-                <p>
-                <b> Weak Binding Cutoff </b>: Epitopes with % Rank Binding affinity lower or equal than this cutoff but higher than <b> Strong Binding Cutoff </b> are considered as WB.
-                " )))})
   
-  # Sixth tab
-  v <- reactiveValues(doPlot = FALSE)
+  # Download button
+  output$downloadData5 <- downloadHandler(
+    filename = function(){
+      paste("Epitope_promiscuity.txt")
+    },
+    content = function(file){
+      write.table(parsed_data5(), file, sep = "\t",row.names = FALSE, quote = FALSE)
+      
+    })
   
-  observeEvent(input$go, {
-    v$doPlot <- input$go
-  })
+  ##############
+  # Up-Set tab #
+  ##############
   
-  alleles <- eventReactive(input$go, {
-    ep_data5 <- ep_data()
-    input$allele3
-  })
-  cutoff5 <- eventReactive(input$go, {
-    input$cutoff_5
-  })
+  # Text
+  output$text_6 <- renderUI({
+    list(p(HTML("Epitope Intersection shows an Up-Set plot where the MHC alleles
+    are represented as the sets and the epitopes are represented as the elements.
+    The selected MHC alleles are represented with bars on the left side
+    indicating the number of predicted epitopes for each MHC allele. 
+    The number of epitopes for each MHC allele or intersection of MHC alleles is
+    represented with bars at the top. Individual points in the grid indicate epitopes binding
+    to a specific MHC allele while connected points indicate epitopes that can bind
+    to multiple MHC alleles. This tool also provides a table containing the number
+    of alleles, the alleles, the epitope sequences within each region, and their respective number of epitopes.
+
+    <br>
+    <h4> Parameters </h4>
+    <ul>
+     <li> <b>Cutoff %rank:</b> Maximum %rank to consider a peptide as predicted epitope. (Default MHC Class I = 2, MHC Class II = 10)</li>    
+     <li> <b>MHC alleles:</b> List of MHC alleles obtained from the input file. Users can choose more than one allele. (Default = first 5 alleles) </li>      
+     </ul>")))})
   
+  # Reactive
+  reactive_6 <- reactiveValues(doPlot = FALSE)
+  observeEvent(input$go_6, {reactive_6$doPlot <- input$go_6})
+  allele_6_react <- eventReactive(input$go_6, {input$allele_6})
+  cutoff_6_react <- eventReactive(input$go_6, {input$cutoff_6})
+  
+  # Parse
   ep_data6 <- shiny::reactive({
+    
+    # Validation of input file
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Updating click button
+    if (reactive_6$doPlot == FALSE) return()
+    allele_6 <- allele_6_react()
+    cutoff_6 <- cutoff_6_react()
+    
     ep_data5 <- ep_data()
-    alleles <- alleles()
-    new_data <- data.frame(matrix(ncol = length(alleles)+1, nrow = nrow(ep_data5)))
-    colnames(new_data) <- c("Peptide", alleles)
+    new_data <- data.frame(matrix(ncol = length(allele_6)+1, nrow = nrow(ep_data5)))
+    colnames(new_data) <- c("Peptide", allele_6)
     new_data$Peptide<- ep_data5$Peptide
-    for (allele in alleles){
-      new_data[allele] <- ep_data5[allele] <= cutoff5()
+    for (allele in allele_6){
+      new_data[allele] <- ep_data5[allele] <= cutoff_6
       new_data[,allele] <- as.integer(new_data[,allele])}
     
     new_data <- new_data[!duplicated(new_data$Peptide),]
     i <- 1
-    x = vector("list", 2**length(alleles)-1)
-    y = vector("list", 2**length(alleles)-1)
+    x = vector("list", 2**length(allele_6)-1)
+    y = vector("list", 2**length(allele_6)-1)
     
     epitopes <- c()
     
-    for(j in 1:length(alleles)){
-      combinations <- combn(alleles,j)
+    for(j in 1:length(allele_6)){
+      combinations <- combn(allele_6,j)
       for (k in 1: ncol(combinations)){
         x[[i]] <- sum(colSums(get_intersect_members(new_data, combinations[,k])))/j
         epitopes <- c(epitopes, ep_data5[as.numeric(rownames(get_intersect_members(new_data, combinations[,k]))), 1])
@@ -727,38 +1234,52 @@ server <- function(session, input, output){
     return(new)
   })
   
+  # Table
   output$table_6 <- DT::renderDataTable({
+    
+    # Validation of input file
+    validate(
+      need(input$input_file != "", " ")
+    )
+    
+    # Updating click button
+    if (reactive_6$doPlot == FALSE) return()
     ep_data6()
-  },options= list(scrollX = "300px"))
+    
+  }, rownames = FALSE, options = list(scrollX = "300px"))
   
-  output$downloadData6 <- downloadHandler(
-    filename = function(){
-      paste("Unput.txt")
-    },
-    content = function(file){
-      write.table(ep_data6(), file, sep = "\t",row.names = FALSE, quote = FALSE)
-    })
-  
-  output$plot5 <- renderPlotly({
+  # Plot
+  output$plot_6 <- renderPlotly({
+    
+    # Validation of input file
+    validate(
+      need(input$input_file!= "", " ")
+    )
+    
     ep_data5 <- ep_data()
-    alleles <- alleles()
-    new_data <- data.frame(matrix(ncol = length(alleles)+1, nrow = nrow(ep_data5)))
-    colnames(new_data) <- c("Peptide", alleles)
+    
+    # Updating click button
+    if (reactive_6$doPlot == FALSE) return()
+    allele_6 <- allele_6_react()
+    cutoff_6 <- cutoff_6_react()
+    
+    # Parsing
+    new_data <- data.frame(matrix(ncol = length(allele_6)+1, nrow = nrow(ep_data5)))
+    colnames(new_data) <- c("Peptide", allele_6)
     new_data$Peptide<- ep_data5$Peptide
-    for (allele in alleles){
-      new_data[allele] <- ep_data5[allele] <= cutoff5()
+    for (allele in allele_6){
+      new_data[allele] <- ep_data5[allele] <= cutoff_6
       new_data[,allele] <- as.integer(new_data[,allele])}
     
     new_data <- new_data[order(new_data[,'Peptide']),]
     new_data <- new_data[!duplicated(new_data$Peptide),]
     i <- 1
-    x = vector("list", 2**length(alleles)-1)
-    y = vector("list", 2**length(alleles)-1)
+    x = vector("list", 2**length(allele_6)-1)
+    y = vector("list", 2**length(allele_6)-1)
     
-    if (v$doPlot == FALSE) return()
     
-    for(j in 1:length(alleles)){
-      combinations <- combn(alleles,j)
+    for(j in 1:length(allele_6)){
+      combinations <- combn(allele_6,j)
       for (k in 1: ncol(combinations)){
         x[[i]] <- sum(colSums(get_intersect_members(new_data, combinations[,k])))/j
         y[[i]] <- paste(combinations[,k], collapse = ",")
@@ -768,8 +1289,8 @@ server <- function(session, input, output){
     z <- do.call(rbind, Map(data.frame, names = y, values= x))
     z <-z[z$values!=0,]
     nintersections = nrow(z)
-    nalleles = length(alleles)
-    set_size <- data.frame(alleles = alleles, size = colSums(new_data[,2:ncol(new_data)]))
+    nalleles = length(allele_6)
+    set_size <- data.frame(alleles = allele_6, size = colSums(new_data[,2:ncol(new_data)]))
     set_size <- set_size[order(set_size[, 'size']),]
     
     ordered_alleles <- as.character(set_size$alleles)
@@ -846,8 +1367,8 @@ server <- function(session, input, output){
     ) %>% add_trace(
       type = "scatter",
       x = rep(1:nintersections,
-              length(alleles)), 
-      y = unlist(lapply(1:length(alleles), function(x)
+              length(allele_6)), 
+      y = unlist(lapply(1:length(allele_6), function(x)
         rep(x - 0.5, nintersections))),
       hoverinfo = "none"
     ) %>% add_trace(
@@ -866,7 +1387,7 @@ server <- function(session, input, output){
                           zeroline = FALSE),
              yaxis = list(showticklabels = FALSE,
                           showgrid = TRUE,
-                          range = c(0, length(alleles)),
+                          range = c(0, length(allele_6)),
                           zeroline = FALSE,
                           range = 1:10),
              margin = list(t = 0, b = 40))
@@ -874,7 +1395,6 @@ server <- function(session, input, output){
     intersect_size_chart <-
       intersect_size_chart %>% layout(yaxis = list(title = "Intersections size"))
     
-    # The y axis labels of the
     s1 <-
       subplot(
         plotly_empty(type = "scatter", mode = "markers"),
@@ -891,6 +1411,14 @@ server <- function(session, input, output){
               shareX = TRUE) %>% layout(showlegend = FALSE)
     subplot(s1, s2, widths = c(0.3, 0.7))
   })
+  
+  # Download button
+  output$downloadData6 <- downloadHandler(
+    filename = function(){
+      paste("Up_Set_epitopes.txt")
+    },
+    content = function(file){
+      write.table(ep_data6(), file, sep = "\t",row.names = FALSE, quote = FALSE)
+    })
 }
 shinyApp(ui = ui, server = server)
-
