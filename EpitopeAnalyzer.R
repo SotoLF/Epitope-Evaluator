@@ -22,17 +22,7 @@ library(shinycssloaders)
 
 # Options for Spinner
 options(spinner.color="#0275D8", spinner.color.background="#ffffff", spinner.size=1)
-
-#setwd("Z:/PPP/shiny_app")
-#install.packages('rsconnect')
-#rsconnect::setAccountInfo(name='lufesu',
-#                          token='46F0C29680D4D3291BC4F11F053B61CB',
-#                          secret='HXRRBuVER09Qz+FJxXqnQRyhQyKA/KtLYLkCsMe7')
-#setwd("Z:/ppp")
-
 options(shiny.maxRequestSize = 30*1024^2)
-
-
 
 
 # Function to calculate U-set 
