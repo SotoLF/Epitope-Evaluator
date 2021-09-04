@@ -20,6 +20,11 @@ We have included 2 example files that can be downloaded and used as input files 
 
 The R scripts of Epitope Analyzer can be freely downloaded from GitHub and launched locally.
 
+
+![](https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png){width='100px'}
+
+
+
 # How to cite Epitope Analyzer
 Paper Citation
 
