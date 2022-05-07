@@ -1,23 +1,36 @@
-# Epitope-Analyzer
-**Epitope Analyzer** is a Shiny app aimed to filter and analyze predicted T-cell epitopes. Epitope Analyzer includes 5 tools: 
+# Epitope-Evaluator
+**Epitope Evaluator** is a Shiny app to analyze predicted T-cell epitopes. Epitope Analyzer includes 6 tools: 
 1. Epitope Distribution
-2. Epitope Density
-3. Epitope Location
-4. Epitope Promiscuity 
-5. Epitope Intersection
+2. Epitope Intersection
+3. Epitope Density
+4. Epitope Location 
+5. Epitope Promiscuity
+6. Epitope Conservation
  
-It needs a txt format file tab-delimited where the first 4 columns are the peptide sequence, the position of the peptide within the protein, the length of the protein, and the name of the protein. The following columns should be named with the allele containing the %rank score assigned to each peptide for each MHC allele. The **%rank** score is a number between 0 and 100. It is defined as the rank of the predicted binding score compared to a set of random natural peptides by several predictors of T-cell epitopes [(32711842](https://pubmed.ncbi.nlm.nih.gov/32711842/) , [32406916](https://pubmed.ncbi.nlm.nih.gov/32406916/), [32308001)](https://pubmed.ncbi.nlm.nih.gov/32308001/). 
+## Input File
+Epitope-Evaluator requires as input: 1) a multi-FASTA file containing the IDs and the sequences of the antigens, and 2) the prediction file obtained from a T-cell epitope predictor (Figure 1D). The user must indicate the predictor being used from a set of options or indicate “others” if not obtained from any of the listed predictors. In this case, the prediction file should have the following columns: the peptide sequence, its position within the protein, the protein ID, the protein length, and subsequent columns corresponding to each of the MHC alleles evaluated, where each value indicates a score for each epitope (Figure 1E).  In addition to this, users must indicate whether the score in the table corresponds to the “percentile rank” or “binding affinity score”. The **percentile rank** score is a number between 0 and 100. It is defined as the rank of the predicted binding score compared to a set of random natural peptides by several predictors of T-cell epitopes [(32711842](https://pubmed.ncbi.nlm.nih.gov/32711842/) , [32406916](https://pubmed.ncbi.nlm.nih.gov/32406916/), [32308001)](https://pubmed.ncbi.nlm.nih.gov/32308001/). The applicative will automatically identify whether the epitopes are class I or class II based on the name of the MHC alleles. 
 
-Usually, the output of these predictors requires to be parsed before uploading in the shiny app. Once the input file is uploaded, parameters need to be set by the user followed by clicking on the **Run analysis** or **Plot** buttons. 
+The title section indicates the different tools that are available in the web tool. Each of these tools is independent, thus, users can run all analyses simultaneously. Each of the six tools and the ‘Input’ tab has four different sections: 
+1. The parameters section : Located on the left side of the web application, allows users to set different options and parameters for the corresponding tool
+2. The title section :
+3. The help section : It describes the functionality of each tool, details each parameter, and explains the plots and tables returned in the output section.
+4. The output section : It shows the plots and tables from the selected analyses which are downloadable. All the tools contain interactive plots where users can zoom in/out, select regions, and obtain more information by hovering
+
+<p align="center">
+ Representation of Epitope-Evaluator and its tools
+</p>
+<p align="center">
+ <img src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Images/Github1.PNG">
+</p>
+
+
 Each of the tools shows 
 1. Graphics that can be downloaded as png files by clicking on the camera icon **Download plot as png**
 2. Tables that can be downloaded by clicking on the **Download table** button.
 
-We have included examples files that can be downloaded [here](https://github.com/SotoLF/Epitope-Analyzer/tree/main/Examples) and used as input files on Epitope Analyzer.
-
 The R scripts of Epitope Analyzer can be freely downloaded and launched locally.
 
-For the examples below, we use the following [table](https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results_MHCII_Spike)
+
 
 # Epitope Distribution: Distribution of epitopes by MHC allele
 
