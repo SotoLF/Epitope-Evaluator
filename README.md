@@ -1,5 +1,5 @@
 # Epitope-Evaluator
-**Epitope Evaluator** is a Shiny app to analyze predicted T-cell epitopes. Epitope Analyzer includes 6 tools: 
+**Epitope Evaluator** is a Shiny app to analyze predicted T-cell epitopes. Epitope-Evaluator includes 6 tools: 
 1. Epitope Distribution
 2. Epitope Intersection
 3. Epitope Density
