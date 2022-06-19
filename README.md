@@ -20,7 +20,7 @@ The title section indicates the different tools that are available in the web to
  Representation of Epitope-Evaluator and its tools
 </p>
 <p align="center">
- <img src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Images/Github1.PNG">
+ <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Github1.PNG">
 </p>
 
 
@@ -28,7 +28,7 @@ Each of the tools shows
 1. Graphics that can be downloaded as png files by clicking on the camera icon **Download plot as png**
 2. Tables that can be downloaded by clicking on the **Download table** button.
 
-The R scripts of Epitope Analyzer can be freely downloaded and launched locally.
+The R scripts of Epitope-Evaluator can be freely downloaded and launched locally.
 
 
 
