@@ -1,6 +1,6 @@
 ### Biological applications
 
-### Prediction of epitopes using Sars
+### Prediction of MHC Class-I and Class-II epitopes from SARS-CoV-2 proteome
 
 ### SARS_Cov2.fasta
 The FASTA file containing the proteome of SARS-Cov2 from Uniprot (ID: UP000464024).
@@ -12,6 +12,8 @@ The prediction file containing MHC Class I epitopes predicted with NetMHCPan and
 ### SARS_Class_II.txt
 The prediction file containing MHC Class II epitopes predicted with NetMHCIIPan. 
 * The super type alleles used were: DRB1-03:01, DRB1-04:01, DRB1-04:05, DRB1-08:03, DRB1-11:01, DRB1-13:02 and DRB3-01:01, and DRB3-02:02. 
+
+### Prediction of Class-II epitopes from Spike variants
 
 ### Spikes.fasta
 The FASTA file containing the Spike sequences for each variant:
