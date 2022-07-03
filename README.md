@@ -54,15 +54,15 @@ RESULTS
  Histogram and Results table of the Spike protein Epitope Distribution for MHCII 
 </p>
 <p align="center">
- <img width="400" height="500" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_Epitope_Distribution.png?raw=true">
- <img width="450" height="500" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_table_Epitope_Distribution.png?raw=true">
+ <img width="400" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Distribution1.PNG">
+ <img width="450" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Distribution2.PNG">
 </p>
 
 <p align="center">
  Duplicate Epitopes of the Spike protein Epitope Distribution for MHCII
 </p>
 <p align="center">
- <img src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_Duplicate_Epitopes.png?raw=true">
+ <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Distribution2.PNG">
 </p>
 
 # Epitope Density: Correlation between number of epitopes and protein lengths
@@ -81,8 +81,8 @@ RESULTS
  Plot and Results table of the Spike protein Epitope Density for MHCII 
 </p>
 <p align="center">
- <img width="400" height="400" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_Epitope_Density.png?raw=true">
- <img width="500" height="300" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_table_Epitope_Density.png?raw=true">
+ <img width="400" height="400" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Density1.PNG">
+ <img width="500" height="300" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Density2.PNG">
 </p>
 
 <p align="center">
@@ -98,7 +98,7 @@ RESULTS
  <img width="800" height="400" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_barplot_Epitope_Density.png?raw=true">
 </p>
 
-# Epitope Viewr: Amino acid position of the epitopes in proteins
+# Epitope Viewer: Amino acid position of the epitopes in proteins
 
 Epitope Viewer shows the location of epitopes within the protein (blue bar). Epitopes are represented on a color gradient from yellow to red reflecting the number of MHC alleles they are predicted to bind to. Hovering on each epitope will show the amino acid sequence, the position within the protein, and the MHC alleles that are predicted to recognize it. Users must select the protein, set a cutoff %rank to filter epitopes, and indicate the MHC alleles of interest. When multiple alleles are selected, users also need to specify if they are interested in epitopes that are predicted to bind all the selected alleles (AND) or at least one of the selected alleles (OR). This tool also shows a table containing the sequence of the epitope, the start and end amino acid position within the protein, the alleles, and the number of alleles to which they were predicted to bind. This analysis may take a few minutes depending on the number of epitopes and the length of the protein. 
 
@@ -113,8 +113,7 @@ RESULTS
  Plot and Results table of the Spike protein Epitope Location for MHCII
 </p>
 <p align="center">
- <img width="650" height="250" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_Epitope_Location.png?raw=true">
- <img width="300" height="300" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_table_Epitope_Location.png?raw=true">
+ <img width="650" height="250" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Location1.PNG">
 </p>
 
 # Epitope Promiscuity: Number of alleles and binding rank per epitopes
@@ -131,8 +130,7 @@ RESULTS
  Plot and Results table of the Spike protein Epitope Promiscuity for MHCII
 </p>
 <p align="center">
- <img width="400" height="500" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_Epitope_Promiscuity.png?raw=true">
- <img width="400" height="500" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_table_Epitope_Promiscuity.png?raw=true">
+ <img width="400" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Promiscuity1.PNG">
 </p>
 
 
@@ -149,14 +147,45 @@ RESULTS
  Plot of the Spike protein Epitope Intersection for MHCII
 </p>
 <p align="center">
- <img width="800" height="500" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_Epitope_Intersection.png?raw=true">
+ <img width="800" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Intersection1.PNG">
 </p>
 <p align="center">
  Results table of the Spike protein Epitope Intersection for MHCII
 </p>
 <p align="center">
- <img width="900" height="600" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_table_Epitope_Intersection.png?raw=true">
+ <img width="900" height="600" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Intersection2.PNG">
 </p>
+<p align='center'>
+  <img width="900" height="600" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Intersection_table.PNG">
+</>
+
+
+
+# Epitope Conservation: Set of epitopes shared between different proteins/strains
+
+Epitope Conservation shows an Up-Set plot where the MHC alleles are represented as the sets and the epitopes are represented as the elements. The selected MHC alleles are represented with bars on the left side indicating the number of predicted epitopes for each MHC allele. The number of epitopes for each MHC allele or intersection of MHC alleles is represented with bars at the top. Individual points in the grid indicate epitopes binding to a specific MHC allele while connected points indicate epitopes that can bind to multiple MHC alleles. This tool also provides a table containing the number of alleles, the alleles, the epitope sequences within each region, and their respective number of epitopes. 
+
+PARAMETERS
+- **Cutoff %rank:** Maximum %rank to consider a peptide as predicted epitope. (Default MHC Class I = 2, MHC Class II = 10)
+- **MHC alleles:** List of MHC alleles obtained from the input file. Users can choose more than one allele. (Default = first 5 alleles)
+
+RESULTS
+<p align="center">
+ Plot of the Spike protein Epitope Intersection for MHCII
+</p>
+<p align="center">
+ <img width="800" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Conservation1.PNG">
+</p>
+<p align="center">
+ Results table of the Spike protein Epitope Intersection for MHCII
+</p>
+<p align="center">
+ <img width="900" height="600" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Conservation2.PNG">
+</p>
+
+<p align='center'>
+  <img width="900" height="600" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Conservation_table.PNG">
+</>
 
 # How to cite Epitope Analyzer
 Paper Citation
