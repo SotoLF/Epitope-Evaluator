@@ -54,15 +54,15 @@ RESULTS
  Histogram and Results table of the Spike protein Epitope Distribution for MHCII 
 </p>
 <p align="center">
- <img width="400" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Distribution1.PNG">
- <img width="450" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Distribution2.PNG">
+ <img width="400" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Distribution1.png">
+ <img width="450" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Distribution2.png">
 </p>
 
 <p align="center">
  Duplicate Epitopes of the Spike protein Epitope Distribution for MHCII
 </p>
 <p align="center">
- <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Distribution2.PNG">
+ <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Distribution2.png">
 </p>
 
 # Epitope Density: Correlation between number of epitopes and protein lengths
@@ -81,22 +81,10 @@ RESULTS
  Plot and Results table of the Spike protein Epitope Density for MHCII 
 </p>
 <p align="center">
- <img width="400" height="400" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Density1.PNG">
- <img width="500" height="300" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Density2.PNG">
+ <img width="400" height="400" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Density1.png">
+ <img width="500" height="300" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Density2.png">
 </p>
 
-<p align="center">
- Heatmap of the Spike protein Epitope Density for MHCII
-</p>
-<p align="center">
- <img width="800" height="350" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_heatmap_Epitope_Density.png?raw=true">
-</p>
-<p align="center">
- Barplot of the Spike protein Epitope Density for MHCII
-</p>
-<p align="center">
- <img width="800" height="400" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_barplot_Epitope_Density.png?raw=true">
-</p>
 
 # Epitope Viewer: Amino acid position of the epitopes in proteins
 
@@ -113,7 +101,7 @@ RESULTS
  Plot and Results table of the Spike protein Epitope Location for MHCII
 </p>
 <p align="center">
- <img width="650" height="250" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Location1.PNG">
+ <img width="650" height="250" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Location1.png">
 </p>
 
 # Epitope Promiscuity: Number of alleles and binding rank per epitopes
@@ -130,7 +118,7 @@ RESULTS
  Plot and Results table of the Spike protein Epitope Promiscuity for MHCII
 </p>
 <p align="center">
- <img width="400" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Promiscuity1.PNG">
+ <img width="400" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Promiscuity1.png">
 </p>
 
 
@@ -147,16 +135,16 @@ RESULTS
  Plot of the Spike protein Epitope Intersection for MHCII
 </p>
 <p align="center">
- <img width="800" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Intersection1.PNG">
+ <img width="800" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Intersection1.png">
 </p>
 <p align="center">
  Results table of the Spike protein Epitope Intersection for MHCII
 </p>
 <p align="center">
- <img width="900" height="600" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Intersection2.PNG">
+ <img width="900" height="600" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Intersection2.png">
 </p>
 <p align='center'>
-  <img width="900" height="600" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Intersection_table.PNG">
+  <img width="900" height="600" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Intersection_table.png">
 </>
 
 
@@ -174,17 +162,17 @@ RESULTS
  Plot of the Spike protein Epitope Intersection for MHCII
 </p>
 <p align="center">
- <img width="800" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Conservation1.PNG">
+ <img width="800" height="500" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Conservation1.png">
 </p>
 <p align="center">
  Results table of the Spike protein Epitope Intersection for MHCII
 </p>
 <p align="center">
- <img width="900" height="600" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Conservation2.PNG">
+ <img width="900" height="600" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Conservation2.png">
 </p>
 
 <p align='center'>
-  <img width="900" height="600" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Conservation_table.PNG">
+  <img width="900" height="600" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Conservation_table.png">
 </>
 
 # How to cite Epitope Analyzer
