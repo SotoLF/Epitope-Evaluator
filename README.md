@@ -20,7 +20,7 @@ The title section indicates the different tools that are available in the web to
  Representation of Epitope-Evaluator and its tools
 </p>
 <p align="center">
- <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Github1.PNG">
+ <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Figure1.PNG">
 </p>
 
 
