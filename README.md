@@ -3,7 +3,7 @@
 1. Epitope Distribution
 2. Epitope Intersection
 3. Epitope Density
-4. Epitope Location 
+4. Epitope Viewer 
 5. Epitope Promiscuity
 6. Epitope Conservation
  
@@ -98,9 +98,9 @@ RESULTS
  <img width="800" height="400" src="https://github.com/SotoLF/Epitope-Analyzer/blob/main/Examples/Results/Spike_MHCII_barplot_Epitope_Density.png?raw=true">
 </p>
 
-# Epitope Location: Amino acid position of the epitopes in proteins
+# Epitope Viewr: Amino acid position of the epitopes in proteins
 
-Epitope Location shows the location of epitopes within the protein (blue bar). Epitopes are represented on a color gradient from yellow to red reflecting the number of MHC alleles they are predicted to bind to. Hovering on each epitope will show the amino acid sequence, the position within the protein, and the MHC alleles that are predicted to recognize it. Users must select the protein, set a cutoff %rank to filter epitopes, and indicate the MHC alleles of interest. When multiple alleles are selected, users also need to specify if they are interested in epitopes that are predicted to bind all the selected alleles (AND) or at least one of the selected alleles (OR). This tool also shows a table containing the sequence of the epitope, the start and end amino acid position within the protein, the alleles, and the number of alleles to which they were predicted to bind. This analysis may take a few minutes depending on the number of epitopes and the length of the protein. 
+Epitope Viewer shows the location of epitopes within the protein (blue bar). Epitopes are represented on a color gradient from yellow to red reflecting the number of MHC alleles they are predicted to bind to. Hovering on each epitope will show the amino acid sequence, the position within the protein, and the MHC alleles that are predicted to recognize it. Users must select the protein, set a cutoff %rank to filter epitopes, and indicate the MHC alleles of interest. When multiple alleles are selected, users also need to specify if they are interested in epitopes that are predicted to bind all the selected alleles (AND) or at least one of the selected alleles (OR). This tool also shows a table containing the sequence of the epitope, the start and end amino acid position within the protein, the alleles, and the number of alleles to which they were predicted to bind. This analysis may take a few minutes depending on the number of epitopes and the length of the protein. 
 
 PARAMETERS
 - **Protein:** List of proteins obtained from the input file. Users must select a protein to be analyzed. (Default = first protein)
