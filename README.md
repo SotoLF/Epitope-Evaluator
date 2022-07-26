@@ -1,5 +1,5 @@
 # Epitope-Evaluator
-**Epitope Evaluator** is a Shiny app to analyze predicted T-cell epitopes. Epitope-Evaluator includes 6 tools: 
+**Epitope-Evaluator** is a Shiny app to analyze predicted T-cell epitopes. Epitope-Evaluator includes 6 tools: 
 1. Epitope Distribution
 2. Epitope Intersection
 3. Epitope Density
@@ -8,13 +8,21 @@
 6. Epitope Conservation
  
 ## Input File
-Epitope-Evaluator requires as input: 1) a multi-FASTA file containing the IDs and the sequences of the antigens, and 2) the prediction file obtained from a T-cell epitope predictor (Figure 1D). The user must indicate the predictor being used from a set of options or indicate “others” if not obtained from any of the listed predictors. In this case, the prediction file should have the following columns: the peptide sequence, its position within the protein, the protein ID, the protein length, and subsequent columns corresponding to each of the MHC alleles evaluated, where each value indicates a score for each epitope (Figure 1E).  In addition to this, users must indicate whether the score in the table corresponds to the “percentile rank” or “binding affinity score”. The **percentile rank** score is a number between 0 and 100. It is defined as the rank of the predicted binding score compared to a set of random natural peptides by several predictors of T-cell epitopes [(32711842](https://pubmed.ncbi.nlm.nih.gov/32711842/) , [32406916](https://pubmed.ncbi.nlm.nih.gov/32406916/), [32308001)](https://pubmed.ncbi.nlm.nih.gov/32308001/). The applicative will automatically identify whether the epitopes are class I or class II based on the name of the MHC alleles. 
+Epitope-Evaluator requires as input: 1) a multi-FASTA file containing the IDs and the sequences of the antigens, and 2) the prediction file obtained from a T-cell epitope predictor. The user should indicate the predictor used from a set of options or indicate “other” if not obtained from any of the listed predictors. In case that 'other' is selected, the prediction file should have the following columns: 1. the peptide sequence, 2. the start position of the epitopes within the protein, 3. the protein ID, 4. the protein length, and subsequent columns corresponding to each of the MHC alleles evaluated, where each value indicates a score for each MHC allele-epitope pair.  In addition to this, users must indicate whether the score in the table corresponds to the “percentile rank” or “binding affinity score”. The **percentile rank** score is a number between 0 and 100. It is defined as the rank of the predicted binding score compared to a set of random natural peptides by several predictors of T-cell epitopes [(32711842](https://pubmed.ncbi.nlm.nih.gov/32711842/) , [32406916](https://pubmed.ncbi.nlm.nih.gov/32406916/), [32308001)](https://pubmed.ncbi.nlm.nih.gov/32308001/). The Web application will automatically identify whether the epitopes are class I or class II based on the name of the MHC alleles. 
 
-The title section indicates the different tools that are available in the web tool. Each of these tools is independent, thus, users can run all analyses simultaneously. Each of the six tools and the ‘Input’ tab has four different sections: 
-1. The parameters section : Located on the left side of the web application, allows users to set different options and parameters for the corresponding tool
-2. The title section :
-3. The help section : It describes the functionality of each tool, details each parameter, and explains the plots and tables returned in the output section.
-4. The output section : It shows the plots and tables from the selected analyses which are downloadable. All the tools contain interactive plots where users can zoom in/out, select regions, and obtain more information by hovering
+The web server is composed of 6 different sections: 'Home’, ‘About’, ‘Run Example’, ‘Documentation’ and ‘Tutorial’. 
+
+1. The ‘Home’ section comprises the Input tab and the 6 different tools available. Each of these tools is independent, thus, users can run all analyses in parallel. Each of the six tools has four different subsections: 
+ 1.1 The parameters section. It is located on the left side of the web application, allows users to set different options for each tool. 
+ 1.2 The title section. It indicates the name of each tool.
+ 1.3 The help section. It describes the functionality of each tool, details each parameter, and explains the plots and tables returned in the output section.
+ 1.4 The output section. It shows the plots and tables from the selected analyses which are downloadable.
+All the tools contain interactive plots where users can zoom in/out, select regions, and obtain more information by hovering over the plots.
+
+2. The ‘About’ section shows a brief summary of Epitope-Evaluator and specifies the necessary files to run the shiny app.
+3. The ‘Run Example’ section contains an example data so users can try the different tools.
+4. The ‘Documentation’ section includes the link to the GitHub to download the code and information of the different T-cell epitopes predictors currently supported. 
+5. The ‘Tutorial’ section, includes videos showing the different steps to use the shiny app and the interactivity of each tool.
 
 <p align="center">
  Representation of Epitope-Evaluator and its tools
