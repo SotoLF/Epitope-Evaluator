@@ -85,12 +85,15 @@ PARAMETERS
 
 RESULTS
 <p align="center">
- Plot and Results table of the Spike protein Epitope Density for MHCII 
+ Plot and table of the correlateion between proteins and number of MHC-II epitopes in SARS-CoV-2 proteome 
 </p>
 <p align="center">
  <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Density1.png">
 </p>
 
+<p align="center">
+ Heatmap showing the number of epitopes within each protein versus MHC-II alleles 
+</p>
 <p align='center'>
 <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Density2.png">
 </p>
@@ -107,7 +110,7 @@ PARAMETERS
 
 RESULTS
 <p align="center">
- Plot and Results table of the Spike protein Epitope Location for MHCII
+ Plot showing the Membrane protein (VME1) and their MHC-II epitopes
 </p>
 <p align="center">
  <img width="650" height="250" src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Location1.png">
@@ -124,7 +127,7 @@ PARAMETERS
 
 RESULTS
 <p align="center">
- Plot and Results table of the Spike protein Epitope Promiscuity for MHCII
+ Plot showing the most promiscuous epitopes from SARS-CoV-II proteome
 </p>
 <p align="center">
  <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Promiscuity1.png">
@@ -141,16 +144,19 @@ PARAMETERS
 
 RESULTS
 <p align="center">
- Plot of the Spike protein Epitope Intersection for MHCII
+ Up-Set plot showing the number of epitopes whitin different MHC-II alleles intersections
 </p>
 <p align="center">
  <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Intersection1.png">
 </p>
 <p align="center">
- Results table of the Spike protein Epitope Intersection for MHCII
+ Venn Diagram plot showing the number of epitopes whitin different MHC-II alleles intersections
 </p>
 <p align="center">
  <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Intersection2.png">
+</p>
+<p align="center">
+ Table with the epitopes belonging to each MHC-II alleles intersection  
 </p>
 <p align='center'>
   <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Intersection_table.png">
@@ -168,13 +174,13 @@ PARAMETERS
 
 RESULTS
 <p align="center">
- Plot of the Spike protein Epitope Intersection for MHCII
+ Up-Set plot showing the number of epitopes shared by different combinations of proteins (Spike Variants)
 </p>
 <p align="center">
  <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Conservation1.png">
 </p>
 <p align="center">
- Results table of the Spike protein Epitope Intersection for MHCII
+ Venn Diagram showing the number of epitopes shared by different combinations of proteins (Spike Variants)
 </p>
 <p align="center">
  <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Conservation2.png">
