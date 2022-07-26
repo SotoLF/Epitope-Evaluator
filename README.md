@@ -13,10 +13,10 @@ Epitope-Evaluator requires as input: 1) a multi-FASTA file containing the IDs an
 The web server is composed of 6 different sections: 'Home’, ‘About’, ‘Run Example’, ‘Documentation’ and ‘Tutorial’. 
 
 1. The ‘Home’ section comprises the Input tab and the 6 different tools available. Each of these tools is independent, thus, users can run all analyses in parallel. Each of the six tools has four different subsections: 
- 1.1 The parameters section. It is located on the left side of the web application, allows users to set different options for each tool. 
- 1.2 The title section. It indicates the name of each tool.
- 1.3 The help section. It describes the functionality of each tool, details each parameter, and explains the plots and tables returned in the output section.
- 1.4 The output section. It shows the plots and tables from the selected analyses which are downloadable.
+ - The parameters section. It is located on the left side of the web application, allows users to set different options for each tool. 
+ - The title section. It indicates the name of each tool.
+ - The help section. It describes the functionality of each tool, details each parameter, and explains the plots and tables returned in the output section.
+ - The output section. It shows the plots and tables from the selected analyses which are downloadable.
 All the tools contain interactive plots where users can zoom in/out, select regions, and obtain more information by hovering over the plots.
 
 2. The ‘About’ section shows a brief summary of Epitope-Evaluator and specifies the necessary files to run the shiny app.
