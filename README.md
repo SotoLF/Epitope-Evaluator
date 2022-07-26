@@ -44,7 +44,7 @@ The R scripts of Epitope-Evaluator can be freely downloaded and launched locally
 
 Epitope Distribution shows:
 1. The distribution of the number of unique epitopes that were predicted to bind to selected MHC alleles within an %rank interval 
-2. A heatmap showing the presence of epitopes across different proteins. 
+2. A heatmap showing the number of epitopes predicted to bind to each MHC-allele considering different cutoffs.
 
 To obtain the distribution of epitopes, users should select one or more MHC alleles, set the min %rank and the max%rank to consider a peptide as an epitope, and select the plot type which could be a histogram or cumulative histogram. The histogram and cumulative histogram plots show the %rank intervals on the x-axis and the number of epitopes on the y-axis. The density is represented with a red line in the histogram plot. To show the epitopes present across multiple proteins, users need to indicate a minimum number of proteins in which the epitopes are contained. The Shiny app will show a heatmap where the epitopes are on the x-axis while proteins are on the y axis. The cells are colored with blue or white indicating the presence or absence of the epitope, respectively. 
 
@@ -59,14 +59,14 @@ PARAMETERS
 
 RESULTS
 <p align="center">
- Histogram and Results table of the Spike protein Epitope Distribution for MHCII 
+ Histogram and Table of the MHC-II epitopes from SARS-CoV-2 proteome using Epitope Distribution
 </p>
 <p align="center">
  <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Distribution1.png">
 </p>
 
 <p align="center">
- Duplicate Epitopes of the Spike protein Epitope Distribution for MHCII
+ Heatmap of MHC-II epitopes binding to each allele with different % rank
 </p>
 <p align="center">
  <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Distribution2.png">
