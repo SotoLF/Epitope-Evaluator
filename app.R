@@ -1206,7 +1206,12 @@ server <- function(session, input, output){
     colnames(parsed_data)[1:4] = c("Peptide", "Pos", "Length", "ID")
     
     ## Updating buttons
+    
     updateCheckboxGroupInput(session = session, inputId = "allele", choices = colnames(parsed_data)[c(-1, -2, -3, -4)], selected = colnames(parsed_data)[c(-1, -2, -3, -4)][1])
+    updateCheckboxGroupInput(session = session, inputId = "allele_4", choices = colnames(parsed_data)[c(-1, -2, -3, -4)], selected = colnames(parsed_data)[c(-1, -2, -3, -4)][1])
+    updateCheckboxGroupInput(session = session, inputId = "allele_6", choices = colnames(parsed_data)[c(-1, -2, -3, -4)], selected = colnames(parsed_data)[c(-1, -2, -3, -4)][1])
+    updateCheckboxGroupInput(session = session, inputId = "allele_7", choices = colnames(parsed_data)[c(-1, -2, -3, -4)], selected = colnames(parsed_data)[c(-1, -2, -3, -4)][1])
+    
     allele_example <- colnames(parsed_data)[5]
     if(startsWith(toupper(allele_example), "HLA")){
       updateNumericInput(session = session, inputId = "xmin", min = 0, max = 2, value = 0)
@@ -1234,14 +1239,13 @@ server <- function(session, input, output){
                          length(), value = 2)
     updateSelectInput(session = session, inputId = "protein_4", choices = parsed_data %>% dplyr::select(ID) %>% unlist() %>% unique(), selected = parsed_data["ID"][1,])
     updateCheckboxGroupInput(session = session, inputId = "protein_7", choices = parsed_data %>% dplyr::select(ID) %>% unlist() %>% unique(), selected = (parsed_data %>% dplyr::select(ID) %>% unlist() %>% unique())[1:3] )
-    updateCheckboxGroupInput(session = session, inputId = "allele_4", choices = colnames(parsed_data)[c(-1, -2, -3, -4)], selected = colnames(parsed_data)[c(-1, -2, -3, -4)][1])
-    updateCheckboxGroupInput(session = session, inputId = "allele_6", choices = colnames(parsed_data)[c(-1, -2, -3, -4)], selected = colnames(parsed_data)[c(-1, -2, -3, -4)][1:3])
-    updateCheckboxGroupInput(session = session, inputId = "allele_7", choices = colnames(parsed_data)[c(-1, -2, -3, -4)], selected = colnames(parsed_data)[c(-1, -2, -3, -4)][1])
+    
+      
     updateNumericInput(session = session,
                        inputId = "min_al",
                        max = length(colnames(parsed_data)[c(-1, -2, -3, -4)]),
                        value = length(colnames(parsed_data)[c(-1, -2, -3, -4)])-1)
-    
+
     return(parsed_data)
   })
   
@@ -1527,8 +1531,13 @@ server <- function(session, input, output){
       return(NULL)
     }
     
+    #print(head(ep_data5))
+    #print(allele_6)
     ep_data6 = ep_data5 %>% select(1, allele_6) ## Selecting alleles 
+    #print(head(ep_data6))
+    #print('middle')
     ep_data6 = melt(ep_data6, id.vars = 'Peptide') %>% as.data.frame()
+    #print(head(ep_data6))
     ep_data6 = ep_data6 %>% filter(value <= cutoff_6) ## Filtering based on cutoff
     
     myList = split(ep_data6$Peptide, ep_data6$variable)
