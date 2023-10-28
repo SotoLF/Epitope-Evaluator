@@ -190,8 +190,9 @@ RESULTS
   <img src="https://github.com/SotoLF/Epitope-Evaluator/blob/main/Images/Conservation_Table.png">
 </>
 
-# How to cite Epitope Analyzer
-Paper Citation
+# How to cite Epitope Evaluator
+[Paper Citation](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9417011/)
+Soto, L. F., Requena, D., & Fuxman Bass, J. I. (2022). Epitope-Evaluator: An interactive web application to study predicted T-cell epitopes. Plos one, 17(8), e0273577.
 
 # Contact
 Juan Fuxman Bass - fuxman@bu.edu 
