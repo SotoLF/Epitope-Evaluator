@@ -1,5 +1,150 @@
 # Epitope-Evaluator
 
+An interactive web application to study predicted T-cell epitopes.
+
+## Overview
+
+Epitope-Evaluator is a Shiny app aimed to filter and analyze predicted T-cell epitopes. The application includes six main analytical tools:
+
+1. **Epitope Distribution**: Analyze distribution of epitopes by MHC allele
+2. **Epitope Intersection**: Identify epitopes shared between different MHC allele combinations
+3. **Epitope Density**: Analyze correlation between number of epitopes and protein length
+4. **Epitope Viewer**: Visualize amino acid position of epitopes in proteins
+5. **Epitope Promiscuity**: Study number of alleles and binding rank per epitope
+6. **Epitope Conservation**: Analyze conservation of epitopes across variants
+
+## Setup and Installation
+
+### Prerequisites
+
+- R (version 4.0.0 or higher)
+- RStudio (recommended)
+
+### Required R Packages
+
+```r
+# Core packages
+install.packages(c("shiny", "shinythemes", "plotly", "shinyjs", "shinycssloaders", 
+                   "shinyBS", "rsconnect", "shinydashboard", "shinyWidgets"))
+
+# Data manipulation packages
+install.packages(c("dplyr", "readr", "tibble", "tidyselect", "rlist", "stringr"))
+
+# Visualization packages
+install.packages(c("ggplot2", "grid", "gridExtra", "reshape", "reshape2", 
+                   "ggVennDiagram"))
+
+# Bioinformatics packages
+install.packages(c("seqinr", "phylotools"))
+```
+
+### Installation
+
+1. Clone this repository:
+```
+git clone https://github.com/YourUsername/Epitope-Evaluator.git
+```
+
+2. Navigate to the project directory:
+```
+cd Epitope-Evaluator
+```
+
+3. Run the application:
+   - Open `app.R` in RStudio and click "Run App", or
+   - Run from command line with: `Rscript -e "shiny::runApp('.')"` 
+
+## Application Structure
+
+The application has been organized into a modular structure for better maintainability:
+
+```
+epitope-evaluator/
+├── app.R                    # Main application file
+├── global.R                 # Global variables and configurations
+├── modules/                 # Functional modules
+│   ├── data_input.R         # Data input module
+│   ├── distribution.R       # Distribution analysis
+│   ├── intersection.R       # Intersection analysis
+│   ├── density.R            # Density analysis
+│   ├── viewer.R             # Epitope viewer
+│   ├── promiscuity.R        # Promiscuity analysis
+│   ├── conservation.R       # Conservation analysis
+│   ├── example.R            # Example tab functionality
+│   └── example
+│       ├── example_main.R
+│       ├── example_data.R
+│       ├── example_density.R
+│       ├── example_distribution.R
+│       ├── example_helper.R
+│       ├── example_intersection.R
+│       ├── example_conservation.R
+│       ├── example_promiscuity.R
+│       └── example_viewer.R
+├── utils/                   # Utility functions
+│   ├── parsing_functions.R  # Functions for parsing file formats
+│   └── helper_functions.R   # Helper functions
+├── ui/                      # UI components
+│   ├── ui_about.R           # About tab UI
+│   ├── ui_documentation.R   # Documentation UI
+│   └── ui_tutorial.R        # Tutorial UI
+├── data/                    # Example data files
+│   ├── README.md
+│   ├── example.fasta                # Fasta file, unique for each prediction tool
+│   ├── example_IEDB_consensus.txt   # IEDB output file
+│   ├── example_MHCFlurry.txt        # MHCFlurry output file
+│   ├── example_NetMHC.xls           # NetMHC output file
+│   ├── example_NetMHCIIPAN.xls      # NetMHCIIPan output file
+│   └── example_NetMHCPAN.xls        # NetMHCPan output file
+└── www/                     # Static files
+    ├── images/              # Images
+    └── videos/              # Tutorial videos
+```
+
+## Usage
+
+### Input Data
+
+The application requires two input files:
+
+1. The output prediction file from a T-cell epitope predictor
+2. The FASTA file used during prediction
+
+Supported predictors include:
+- NetMHC
+- NetMHCpan
+- NetMHCIIpan
+- MHCFlurry
+- IEDB Consensus
+
+### Analysis Workflow
+
+1. Upload prediction and FASTA files
+2. Select predictor type and score type
+3. Run analysis to load the data
+4. Use each of the analysis tabs to explore different aspects of the data
+5. Download tables and save plots as needed
+
+## Example Data
+
+Example data from SARS-CoV-2 proteome is included in the application. Access it through the "Run Example" tab.
+
+## Documentation
+
+For detailed documentation on each tool and the supported file formats, please refer to the "Documentation" tab within the application.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Contact
+
+- Juan Fuxman Bass - fuxman@bu.edu
+- Luis F. Soto - lfs4003@med.cornell.edu
+
+
+# Epitope-Evaluator (Website version + tools description)
+
 **Website URL: https://fuxmanlab.shinyapps.io/Epitope-Evaluator**
 
 
