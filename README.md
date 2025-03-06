@@ -42,7 +42,7 @@ install.packages(c("seqinr", "phylotools"))
 
 1. Clone this repository:
 ```
-git clone https://github.com/YourUsername/Epitope-Evaluator.git
+git clone https://github.com/SotoLF/Epitope-Evaluator.git
 ```
 
 2. Navigate to the project directory:
