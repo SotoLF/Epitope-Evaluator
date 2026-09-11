@@ -1,43 +1,65 @@
-# global.R - Configuración global y carga de librerías para Epitope-Evaluator
+# global.R -- Global configuration for Epitope-Evaluator 2
 #
-# Este archivo contiene todas las librerías necesarias, opciones de configuración
-# y carga los archivos de utilidades necesarios para la aplicación.
+# Dependency policy: CRAN-only, no system libraries (GDAL/GEOS/PROJ/etc.), so the
+# app deploys unchanged to shinyapps.io. Seven packages total, down from 22 in v1:
+#
+#   shiny bslib plotly DT data.table matrixStats stringi
+#
+# Deliberately removed relative to v1:
+#   seqinr, phylotools  -> replaced by a vectorised built-in FASTA reader
+#   reshape, reshape2   -> archived on CRAN; replaced by data.table
+#   ggVennDiagram, sf   -> sf needs GDAL/GEOS/PROJ; Venn is now drawn natively in plotly
+#   ggplot2, gridExtra  -> every plot is now a native plotly trace (no ggplotly round-trip)
+#   shinyBS             -> archived on CRAN; collapsibles are now bslib accordions
+#   shinythemes, shinydashboard, shinyWidgets, shinyjs, rlist, tidyselect, rsconnect
 
-# Carga de librerías ----
-library(shiny)
-library(shinythemes)
-library(plotly)
-library(shinyjs)
-library(shinycssloaders)
-library(shinyBS)
-library(rsconnect)
+suppressPackageStartupMessages({
+  library(shiny)
+  library(bslib)
+  library(plotly)
+  library(DT)
+  library(data.table)
+  library(matrixStats)
+  library(stringi)
+})
 
-# Librerías para visualización y manipulación de datos
-library(ggplot2)
-library(dplyr)
-library(readr)
-library(grid)
-library(gridExtra)
-library(reshape)
-library(shinydashboard)
-library(tidyselect)
-library(rlist)
-library(tibble)
-library(seqinr)
-library(phylotools)
-library(reshape2)
-library(ggVennDiagram)
-library(stringr)
-library(shinyWidgets)
+# ---------------------------------------------------------------------------
+# Runtime options
+# ---------------------------------------------------------------------------
 
-# Configuración global de la aplicación ----
-options(spinner.color="#0275D8", spinner.color.background="#ffffff", spinner.size=1)
-options(shiny.maxRequestSize = 30*1024^2)  # Permite subir archivos de hasta 30MB
+# v1 capped uploads at 30 MB, which silently rejected the 25 MB MHCFlurry example
+# plus its FASTA. Sized here for the ~100-300 MB prediction files the app targets.
+options(shiny.maxRequestSize = 400 * 1024^2)
 
-# Carga de archivos de utilidades
-source("utils/parsing_functions.R")
-source("utils/helper_functions.R")
+# data.table threading: shinyapps.io containers are 1-2 cores. Using all of them
+# inside a single Shiny process starves the event loop, so cap at 2.
+#
+# detectCores() returns NA in many containers (shinyapps.io included), and
+# setDTthreads(NA) is an error -- which would stop the app from booting there.
+local({
+  n <- suppressWarnings(parallel::detectCores(logical = FALSE))
+  if (!is.numeric(n) || length(n) != 1L || is.na(n) || n < 1L) n <- 1L
+  data.table::setDTthreads(max(1L, min(2L, as.integer(n))))
+})
 
-# Carga del conjunto de datos de ejemplo
-example_data = Parse_NetMHCPAN('data/example.xls', 'data/example.fasta', 'Rank')
-colnames(example_data)[1:4] = c("Peptide", "Pos", "Length", "ID")  # Estandariza nombres de columnas
+options(
+  stringsAsFactors = FALSE,
+  # Show the real error text in the UI instead of the generic "an error occurred";
+  # every output is wrapped by ee_safe() so nothing leaks a stack trace to the user.
+  shiny.sanitize.errors = FALSE
+)
+
+# ---------------------------------------------------------------------------
+# Analysis-wide constants (palette, default cutoffs, rendering guards)
+# ---------------------------------------------------------------------------
+
+source("utils/constants.R", local = FALSE)
+
+# ---------------------------------------------------------------------------
+# Source order matters: utils before modules.
+# ---------------------------------------------------------------------------
+
+source("utils/parsing_functions.R", local = FALSE)
+source("utils/core_functions.R",    local = FALSE)
+source("utils/plot_functions.R",    local = FALSE)
+source("utils/ui_helpers.R",        local = FALSE)

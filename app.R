@@ -1,81 +1,139 @@
-# app.R - Archivo principal de la aplicación Epitope-Evaluator
+# app.R -- Epitope-Evaluator 2
 #
-# Este archivo integra todos los componentes de la aplicación y define
-# la estructura general de la interfaz de usuario.
+# An interactive web application to study predicted T-cell epitopes.
+# Soto, Requena & Fuxman Bass (2022) PLoS ONE 17(8):e0273577
+#
+# Structure:
+#   global.R   options, dependencies, constants
+#   utils/     parsing (file readers) | core (analysis) | plot | ui helpers
+#   modules/   one Shiny module per tool, each reused by Home and Run Example
+#   ui/        the static About / Documentation / Tutorial pages
+#   tests/     engine tests, runnable without Shiny
 
-# Carga configuración global y librerías
 source("global.R")
 
-# Carga módulos UI
-source("modules/data_input.R")
-source("modules/distribution.R")
-source("modules/intersection.R")
-source("modules/density.R")
-source("modules/viewer.R")
-source("modules/promiscuity.R")
-source("modules/conservation.R")
-source("modules/example.R")
-
-# Carga componentes UI
-source("ui/ui_about.R")
-source("ui/ui_documentation.R")
-source("ui/ui_tutorial.R")
-
-# UI principal
-ui <- navbarPage(
-  title = span(
-    "Epitope-Evaluator",
-    style = 'color: white; font-size:140%',
-    tags$head(HTML("<title>Epitope-Evaluator</title>"))
-  ), 
-  collapsible = TRUE, 
-  inverse = TRUE, 
-  
-  # Panel Home con análisis principal
-  tabPanel(
-    useShinyjs(), 
-    title = span("Home", style = 'font-size:130%'),
-    fluidPage(
-      setBackgroundColor("#ecf0f5"),
-      tabsetPanel(
-        # Carga módulos
-        data_input_ui("data_input"),
-        distribution_ui("distribution"),
-        intersection_ui("intersection"),
-        density_ui("density"),
-        viewer_ui("viewer"),
-        promiscuity_ui("promiscuity"),
-        conservation_ui("conservation")
-      )
-    )
-  ),
-  
-  # Carga componentes UI adicionales
-  about_ui(),
-  example_ui("example"),
-  documentation_ui(),
-  tutorial_ui()
-)
-
-# Server principal
-server <- function(session, input, output) {
-  
-  # Inicializa servidores de los componentes UI
-  about_server(output)
-  documentation_server(output)
-  
-  # Inicializa servidores de módulos
-  parsed_data <- data_input_server("data_input", session)
-  distribution_server("distribution", parsed_data)
-  intersection_server("intersection", parsed_data)
-  density_server("density", parsed_data)
-  viewer_server("viewer", parsed_data)
-  promiscuity_server("promiscuity", parsed_data)
-  conservation_server("conservation", parsed_data)
-  
-  # Inicializa servidor de ejemplo
-  example_server("example")
+for (f in c("data_input", "distribution", "intersection", "density",
+            "viewer", "promiscuity", "conservation")) {
+  source(file.path("modules", paste0(f, ".R")))
+}
+for (f in c("ui_about", "ui_documentation", "ui_tutorial")) {
+  source(file.path("ui", paste0(f, ".R")))
 }
 
-# Inicia la aplicación
-shinyApp(ui = ui, server = server)
+# ---------------------------------------------------------------------------
+# Theme
+# ---------------------------------------------------------------------------
+
+ee_theme <- bslib::bs_theme(
+  version = 5,
+  base_font = bslib::font_face(
+    family = "system-ui",
+    src = "local('system-ui')"      # no webfont fetch; respects the CSP on shinyapps.io
+  ),
+  primary = EE$col$accent,
+  "navbar-bg" = "#0B3C5D",
+  "body-bg" = "#F5F7FA",
+  "card-border-color" = "#E3E8EE",
+  "border-radius" = "8px",
+  font_scale = 0.95
+)
+
+# One tabset holding the six tools plus the input tab. Used twice: once with the
+# upload module and once with the bundled example, which is the whole reason the
+# 2,149-line modules/example/ tree from v1 is gone.
+ee_workbench <- function(prefix, preset = NULL) {
+  ns <- function(x) paste0(prefix, "_", x)
+  bslib::navset_tab(
+    id = ns("tabs"),
+    bslib::nav_panel("Input data",          data_input_ui(ns("input"), preset)),
+    bslib::nav_panel("Distribution",        distribution_ui(ns("distribution"))),
+    bslib::nav_panel("Intersection",        intersection_ui(ns("intersection"))),
+    bslib::nav_panel("Density",             density_ui(ns("density"))),
+    bslib::nav_panel("Viewer",              viewer_ui(ns("viewer"))),
+    bslib::nav_panel("Promiscuity",         promiscuity_ui(ns("promiscuity"))),
+    bslib::nav_panel("Conservation",        conservation_ui(ns("conservation")))
+  )
+}
+
+ee_workbench_server <- function(prefix, preset = NULL) {
+  ns <- function(x) paste0(prefix, "_", x)
+  ds <- data_input_server(ns("input"), preset)
+  distribution_server(ns("distribution"), ds)
+  intersection_server(ns("intersection"), ds)
+  density_server(ns("density"), ds)
+  viewer_server(ns("viewer"), ds)
+  promiscuity_server(ns("promiscuity"), ds)
+  conservation_server(ns("conservation"), ds)
+  ds
+}
+
+# ---------------------------------------------------------------------------
+# UI
+# ---------------------------------------------------------------------------
+
+ui <- bslib::page_navbar(
+  id = "ee_nav",
+  # The mark echoes the Epitope Viewer -- a protein backbone with epitope blocks
+  # on the same yellow-to-red ramp. Generated by tools/make_icons.R from the
+  # palette in utils/constants.R, so branding and plots cannot drift apart.
+  title = span(
+    class = "ee-brand",
+    tags$img(src = "favicon.svg", class = "ee-logo", alt = "", `aria-hidden` = "true"),
+    span(class = "ee-brand-text", "Epitope-Evaluator")
+  ),
+  theme = ee_theme,
+  window_title = "Epitope-Evaluator",
+  fillable = FALSE,
+  header = tags$head(
+    tags$link(rel = "stylesheet", href = "styles.css"),
+    # SVG first for browsers that take it, PNG for the rest, 180px for iOS.
+    tags$link(rel = "icon", type = "image/svg+xml", href = "favicon.svg"),
+    tags$link(rel = "icon", type = "image/png", sizes = "32x32", href = "favicon-32.png"),
+    tags$link(rel = "apple-touch-icon", sizes = "180x180", href = "favicon-180.png"),
+    tags$meta(name = "theme-color", content = "#0B3C5D"),
+    tags$meta(name = "description",
+              content = "Interactive analysis of predicted T-cell epitopes")
+  ),
+
+  bslib::nav_panel("Analyse",     ee_workbench("home")),
+  bslib::nav_panel("Run example", ee_workbench("demo", preset = TRUE)),
+  bslib::nav_panel("Documentation", documentation_ui()),
+  bslib::nav_panel("Tutorial",      tutorial_ui()),
+  bslib::nav_panel("About",         about_ui()),
+
+  bslib::nav_spacer(),
+  bslib::nav_item(tags$a(
+    href = "https://github.com/SotoLF/Epitope-Evaluator", target = "_blank",
+    rel = "noopener", class = "ee-navlink", "GitHub")),
+  bslib::nav_item(tags$a(
+    href = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9417011/", target = "_blank",
+    rel = "noopener", class = "ee-navlink", "Paper"))
+)
+
+# ---------------------------------------------------------------------------
+# Server
+# ---------------------------------------------------------------------------
+
+server <- function(input, output, session) {
+  ee_workbench_server("home")
+  ee_workbench_server("demo", preset = TRUE)
+
+  # Deep links: ?page=Run+example&tool=Viewer opens straight at that tool, so a
+  # particular view can be shared or bookmarked. Unknown names are ignored.
+  observe({
+    q <- parseQueryString(session$clientData$url_search)
+    if (!length(q)) return()
+    pages <- c("Analyse", "Run example", "Documentation", "Tutorial", "About")
+    tools <- c("Input data", "Distribution", "Intersection", "Density",
+               "Viewer", "Promiscuity", "Conservation")
+    pg <- pages[match(tolower(q$page %||% ""), tolower(pages))]
+    if (!is.na(pg) && length(pg)) bslib::nav_select("ee_nav", pg, session = session)
+    tl <- tools[match(tolower(q$tool %||% ""), tolower(tools))]
+    if (!is.na(tl) && length(tl)) {
+      target <- if (identical(pg, "Run example")) "demo_tabs" else "home_tabs"
+      bslib::nav_select(target, tl, session = session)
+    }
+  })
+}
+
+shinyApp(ui, server)

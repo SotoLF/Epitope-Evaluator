@@ -1,0 +1,538 @@
+# tests/test_app.R -- Shiny-layer smoke tests for Epitope-Evaluator 2
+#
+#   Rscript tests/test_app.R            (from the app root)
+#
+# Loads the whole app the way shinyApp() does, builds every UI page, and renders
+# every figure and table for a class I and a class II dataset -- including the
+# empty-selection and bad-parameter paths that must degrade to a message rather
+# than a disconnected session. Complements tests/test_core.R, which covers the
+# analysis engine without Shiny.
+
+if (!file.exists("global.R")) setwd("..")
+
+.pass <- 0L; .fail <- 0L; .failures <- character(0)
+ok <- function(label, expr) {
+  res <- tryCatch(isTRUE(expr), error = function(e) structure(FALSE, msg = conditionMessage(e)))
+  if (isTRUE(res)) { .pass <<- .pass + 1L; cat(sprintf("  \033[32mok\033[0m   %s\n", label)) }
+  else {
+    .fail <<- .fail + 1L; .failures <<- c(.failures, label)
+    cat(sprintf("  \033[31mFAIL\033[0m %s%s\n", label,
+                if (is.null(attr(res, "msg"))) "" else paste0("  <", attr(res, "msg"), ">")))
+  }
+}
+section <- function(x) cat(sprintf("\n\033[1m%s\033[0m\n", x))
+
+# Any warning raised while building the app is a defect worth seeing.
+options(warn = 1)
+
+# ===========================================================================
+section("Loading the application")
+# ===========================================================================
+ok("global.R and all utils source cleanly", { source("global.R"); TRUE })
+ok("all seven modules source cleanly", {
+  for (f in c("data_input", "distribution", "intersection", "density",
+              "viewer", "promiscuity", "conservation"))
+    source(file.path("modules", paste0(f, ".R")))
+  TRUE })
+ok("all three static pages source cleanly", {
+  for (f in c("ui_about", "ui_documentation", "ui_tutorial"))
+    source(file.path("ui", paste0(f, ".R")))
+  TRUE })
+ok("www/styles.css is present", file.exists("www/styles.css"))
+
+# ===========================================================================
+section("UI construction (every tag tree must render to HTML)")
+# ===========================================================================
+render_ok <- function(tag) {
+  h <- as.character(htmltools::renderTags(tag)$html)
+  nchar(h) > 200
+}
+ok("data_input_ui (upload mode)",  render_ok(data_input_ui("t", NULL)))
+ok("data_input_ui (example mode)", render_ok(data_input_ui("t", TRUE)))
+for (m in c("distribution", "intersection", "density", "viewer", "promiscuity", "conservation")) {
+  ok(sprintf("%s_ui", m), render_ok(get(paste0(m, "_ui"))("t")))
+}
+ok("about_ui",         render_ok(about_ui()))
+ok("documentation_ui", render_ok(documentation_ui()))
+ok("tutorial_ui",      render_ok(tutorial_ui()))
+
+# Every <img> the static pages emit must point at a file that exists. v1's
+# About page referenced www/images/Github1.png, which was never committed, and
+# its Tutorial pointed at eight .mp4 files that are gitignored.
+ok("every image referenced by the static pages exists", {
+  h <- paste(vapply(c("about_ui", "documentation_ui", "tutorial_ui"),
+                    function(f) as.character(htmltools::renderTags(get(f)())$html), ""),
+             collapse = "")
+  refs <- unique(regmatches(h, gregexpr("images/[A-Za-z0-9_.-]+", h))[[1]])
+  length(refs) >= 7L && all(file.exists(file.path("www", refs))) })
+ok("the static pages reference no missing-file placeholders", {
+  h <- paste(vapply(c("about_ui", "documentation_ui", "tutorial_ui"),
+                    function(f) as.character(htmltools::renderTags(get(f)())$html), ""),
+             collapse = "")
+  !grepl("not bundled", h, fixed = TRUE) })
+ok("ee_figure degrades to a caption when the file is absent", {
+  h <- as.character(htmltools::renderTags(ee_figure("nope.png", "a caption"))$html)
+  grepl("a caption", h, fixed = TRUE) && !grepl("<img", h, fixed = TRUE) })
+
+# The Documentation page shows the real bundled files, so every previewed path
+# must exist and every preview must actually contain data rows.
+ok("documentation previews real files with data rows", {
+  h <- as.character(htmltools::renderTags(documentation_ui())$html)
+  n_tab <- lengths(regmatches(h, gregexpr("class=\"ee-preview\"", h)))
+  n_tab >= 5L && !grepl("not bundled", h, fixed = TRUE) &&
+    !grepl("could not read the file", h, fixed = TRUE) })
+ok("the NetMHC family preview shows two header rows", {
+  h <- as.character(htmltools::renderTags(
+    ee_file_preview("data/example_NetMHCPAN.xls", header_rows = 2L))$html)
+  lengths(regmatches(h, gregexpr("<tr>", h))) >= 6L &&
+    grepl("HLA-A01:01", h, fixed = TRUE) && grepl("EL_Rank", h, fixed = TRUE) })
+ok("a preview of a missing file degrades to a note", {
+  h <- as.character(htmltools::renderTags(ee_file_preview("data/nope.xls"))$html)
+  grepl("not bundled", h, fixed = TRUE) })
+
+app_env <- new.env()
+ok("the full app object builds", {
+  app <- source("app.R", local = app_env)$value
+  inherits(app, "shiny.appobj") })
+
+section("Branding assets")
+# The mark is generated by tools/make_icons.R. A missing icon is invisible in
+# development (the tab just shows a default) but wrong on a deployed app, and
+# deploy.R refuses to bundle without them, so assert they exist and are sane.
+for (f in c("favicon.svg", "favicon-32.png", "favicon-180.png")) {
+  ok(sprintf("www/%s exists and is non-empty", f),
+     file.exists(file.path("www", f)) && file.size(file.path("www", f)) > 100)
+}
+ok("the SVG mark declares an intrinsic size, not just a viewBox", {
+  svg <- paste(readLines("www/favicon.svg", warn = FALSE), collapse = " ")
+  grepl('width="32"', svg, fixed = TRUE) && grepl('height="32"', svg, fixed = TRUE) &&
+    grepl("viewBox", svg, fixed = TRUE) })
+ok("the mark uses the palette from utils/constants.R", {
+  svg <- paste(readLines("www/favicon.svg", warn = FALSE), collapse = " ")
+  grepl(EE$col$protein, svg, fixed = TRUE) })
+# renderTags() splits the tree: <head> content lands in $head, the body in
+# $html. Check both, or the favicon links look absent when they are not.
+ui_markup <- function() {
+  r <- htmltools::renderTags(app_env$ui)
+  paste(as.character(r$html), as.character(r$head), collapse = " ")
+}
+ok("the navbar carries the logo and the favicon links", {
+  h <- ui_markup()
+  grepl("ee-logo", h, fixed = TRUE) &&
+    grepl('rel="icon" type="image/svg+xml"', h, fixed = TRUE) &&
+    grepl("apple-touch-icon", h, fixed = TRUE) })
+ok("every asset the head references exists on disk", {
+  h <- ui_markup()
+  refs <- unlist(regmatches(h, gregexpr('(href|src)="[^"/][^"]*[.](css|svg|png|ico)"', h)))
+  refs <- gsub('^(href|src)="|"$', "", refs)
+  length(refs) >= 4L && all(file.exists(file.path("www", refs))) })
+
+
+
+# ===========================================================================
+section("Figures and tables render for real data")
+# ===========================================================================
+dsI  <- ee_parse("data/example_NetMHCPAN.xls",   "data/example.fasta", "NetMHCpan",   "Rank")
+dsII <- ee_parse("data/example_NetMHCIIPAN.xls", "data/example.fasta", "NetMHCIIpan", "Rank")
+
+# A figure counts as rendered only once plotly has serialised it to JSON.
+built <- function(p) {
+  stopifnot(inherits(p, "plotly") || inherits(p, "htmlwidget"))
+  j <- plotly::plotly_build(p)
+  length(j$x$data) > 0L && !is.null(j$x$layout)
+}
+tbl_ok <- function(d) inherits(d, "datatables")
+
+for (nm in c("class I", "class II")) {
+  d <- if (nm == "class I") dsI else dsII
+  al <- d$alleles[seq_len(min(5L, length(d$alleles)))]
+  ct <- ee_suggest(d)$cutoff
+  cat(sprintf("\n  -- %s (%s, %d alleles, cutoff %g)\n", nm, d$predictor, length(al), ct))
+
+  ok("histogram", built(ee_plot_histogram(
+    ee_histogram(ee_combine(d, al, "Union", TRUE), 0, ct, ct / 20), xlab = ee_score_label(d))))
+  ok("cumulative histogram", built(ee_plot_histogram(
+    ee_histogram(ee_combine(d, al, "Union", TRUE), 0, ct, ct / 20), cumulative = TRUE)))
+  ok("cutoff heatmap", built(ee_plot_cutoff_heatmap(
+    ee_cutoff_grid(d, al, seq(ct / 10, ct, length.out = 10)))))
+
+  mem <- ee_membership(d, al, ct, by = "allele"); cmb <- ee_combinations(mem)
+  ok("upset", built(ee_plot_upset(cmb, ee_set_sizes(mem))))
+  ok("venn (3 sets)", {
+    m3 <- ee_membership(d, al[1:3], ct, by = "allele")
+    built(ee_plot_venn(m3, ee_combinations(m3))) })
+  ok("venn (4 sets)", {
+    m4 <- ee_membership(d, al[1:4], ct, by = "allele")
+    built(ee_plot_venn(m4, ee_combinations(m4))) })
+  ok("venn declines gracefully past its limit", {
+    built(ee_plot_venn(mem, cmb)) })   # 5 sets -> an explanatory empty figure
+  ok("intersection table", tbl_ok(ee_datatable(cmb)))
+
+  dens <- ee_density_table(d, al, "Union", ct)
+  ok("density scatter", built(ee_plot_density_scatter(dens)))
+  ok("density scatter with a selection",
+     built(ee_plot_density_scatter(dens, selected = dens$ID[1:2])))
+  ok("density scatter, log axes", built(ee_plot_density_scatter(dens, log_axes = TRUE)))
+  ok("density table", tbl_ok(ee_datatable(dens)))
+
+  pa <- ee_protein_allele_counts(d, al, ct)
+  ok("protein x allele heatmap", built(ee_plot_protein_allele(pa)))
+  ok("protein x allele heatmap by density",
+     built(ee_plot_protein_allele(pa, fill = "Density")))
+  ok("protein x allele bar plot", built(ee_plot_protein_allele(pa, plot_type = "Bar plot")))
+  ok("protein x allele, input order",
+     built(ee_plot_protein_allele(pa, sort_by = "Input order")))
+  ok("protein x allele, linear colour scale",
+     built(ee_plot_protein_allele(pa, log_scale = FALSE)))
+
+  vw <- ee_viewer_layout(d, "sp|P0DTC2|SPIKE_SARS2", al, "Union", ct)
+  ok("viewer", built(ee_plot_viewer(vw)))
+  ok("viewer without labels", built(ee_plot_viewer(vw, show_labels = FALSE)))
+  ok("viewer on the longest protein",
+     built(ee_plot_viewer(ee_viewer_layout(d, "sp|P0DTD1|R1AB_SARS2", d$alleles, "Union", ct))))
+  ok("viewer table", tbl_ok(ee_datatable(vw$epitopes)))
+
+  s <- ee_suggest(d)
+  pr <- ee_promiscuity(d, d$alleles, s$strong, s$weak, max(2L, length(d$alleles) - 2L))
+  ok("promiscuity heatmap", built(ee_plot_promiscuity(pr, ee_score_label(d))))
+  ok("promiscuity table", tbl_ok(ee_datatable(pr$table)))
+
+  memp <- ee_membership(d, d$proteins$ID[1:4], ct, by = "protein", alleles = al, mode = "Union")
+  ok("conservation upset", built(ee_plot_upset(ee_combinations(memp), ee_set_sizes(memp))))
+  ok("conservation venn", built(ee_plot_venn(memp, ee_combinations(memp))))
+}
+
+# ===========================================================================
+section("Hover templates must resolve against data that survives serialisation")
+# ===========================================================================
+# plotly silently DROPS `customdata` for several trace types when it is handed
+# an R matrix, so a template like %{customdata[0]} renders as literal text in
+# the browser while plotly_build() still succeeds. Checking that a figure
+# "builds" is therefore not enough: every %{field} a hovertemplate references
+# must exist on the built trace, with one entry per point (or a matrix for a
+# heatmap). This walks every figure the app can draw and asserts exactly that.
+
+hover_problems <- function(p, label) {
+  b <- plotly::plotly_build(p)
+  bad <- character(0)
+  for (i in seq_along(b$x$data)) {
+    tr <- b$x$data[[i]]
+    ht <- paste(tr$hovertemplate, collapse = "")
+    if (!nzchar(ht)) next
+
+    if (grepl("customdata\\[", ht, fixed = FALSE)) {
+      bad <- c(bad, sprintf("%s trace %d: uses indexed customdata", label, i))
+    }
+    refs <- regmatches(ht, gregexpr("%\\{([a-zA-Z]+)", ht))[[1]]
+    refs <- unique(sub("^%\\{", "", refs))
+    # x/y/z/label/value are computed by plotly itself.
+    refs <- setdiff(refs, c("x", "y", "z", "label", "value", "percent", "marker"))
+    npt <- max(length(tr$x), length(tr$y), 1L)
+    for (r in refs) {
+      f <- tr[[r]]
+      if (is.null(f) || length(f) == 0L) {
+        bad <- c(bad, sprintf("%s trace %d: hovertemplate uses %%{%s} but the field is absent/empty",
+                              label, i, r))
+      } else if (is.null(dim(f)) && length(f) != npt && length(f) != 1L) {
+        bad <- c(bad, sprintf("%s trace %d: %%{%s} has %d entries for %d points",
+                              label, i, r, length(f), npt))
+      }
+    }
+  }
+  bad
+}
+
+all_bad <- character(0)
+for (nm in c("class I", "class II")) {
+  d  <- if (nm == "class I") dsI else dsII
+  al <- d$alleles[seq_len(min(4L, length(d$alleles)))]
+  s  <- ee_suggest(d); ct <- s$cutoff
+  mem <- ee_membership(d, al, ct, by = "allele"); cmb <- ee_combinations(mem)
+  m3  <- ee_membership(d, al[1:3], ct, by = "allele")
+  pa  <- ee_protein_allele_counts(d, al, ct)
+  dens <- ee_density_table(d, al, "Union", ct)
+  vw  <- ee_viewer_layout(d, "sp|P0DTC2|SPIKE_SARS2", al, "Union", ct)
+  pr  <- ee_promiscuity(d, d$alleles, s$strong, s$weak, max(2L, length(d$alleles) - 2L))
+  hh  <- ee_histogram(ee_combine(d, al, "Union", TRUE), 0, ct, ct / 20)
+
+  figs <- list(
+    histogram        = ee_plot_histogram(hh, xlab = ee_score_label(d)),
+    cumulative       = ee_plot_histogram(hh, cumulative = TRUE),
+    cutoff_heatmap   = ee_plot_cutoff_heatmap(ee_cutoff_grid(d, al, seq(ct/10, ct, length.out = 8))),
+    upset            = ee_plot_upset(cmb, ee_set_sizes(mem)),
+    venn             = ee_plot_venn(m3, ee_combinations(m3)),
+    density_scatter  = ee_plot_density_scatter(dens),
+    density_selected = ee_plot_density_scatter(dens, selected = dens$ID[1:2]),
+    grid_heatmap     = ee_plot_protein_allele(pa),
+    grid_density     = ee_plot_protein_allele(pa, fill = "Density"),
+    grid_barplot     = ee_plot_protein_allele(pa, plot_type = "Bar plot"),
+    viewer           = ee_plot_viewer(vw),
+    promiscuity      = ee_plot_promiscuity(pr, ee_score_label(d))
+  )
+  for (fn in names(figs)) {
+    bad <- hover_problems(figs[[fn]], sprintf("%s/%s", nm, fn))
+    ok(sprintf("%-16s hover fields resolve (%s)", fn, nm), length(bad) == 0L)
+    all_bad <- c(all_bad, bad)
+  }
+}
+if (length(all_bad)) cat(paste0("       ", all_bad, collapse = "\n"), "\n")
+
+section("Table cells must stay a readable size")
+ok("peptide preview shortens a long list", {
+  long <- paste(sprintf("PEP%05d", 1:500), collapse = ", ")
+  v <- ee_peptide_preview(long)
+  nchar(v) < 120 && grepl("\\(\\+494 more\\)", v) })
+ok("peptide preview leaves a short list intact",
+   ee_peptide_preview("AAA, BBB") == "AAA, BBB")
+ok("peptide preview handles an empty cell", ee_peptide_preview("") == "")
+ok("intersection table cells are bounded", {
+  mem <- ee_membership(dsI, dsI$alleles[1:4], 2, by = "allele")
+  prev <- ee_peptide_preview(ee_combinations(mem)$peptides)
+  max(nchar(prev)) < 150 })
+ok("the download keeps the full list", {
+  mem <- ee_membership(dsI, dsI$alleles[1:4], 2, by = "allele")
+  full <- ee_combinations(mem)$peptides
+  max(nchar(full)) > 1000 })
+ok("density colourbar is labelled with counts, not log10 values", {
+  pa <- ee_protein_allele_counts(dsI, dsI$alleles[1:4], 2)
+  b <- plotly::plotly_build(ee_plot_protein_allele(pa, log_scale = TRUE))
+  cb <- b$x$data[[1]]$colorbar
+  identical(cb$tickmode, "array") && length(cb$ticktext) > 1L &&
+    # the top label must be a real epitope count, well above the log10 value
+    max(as.numeric(gsub(",", "", cb$ticktext))) > max(cb$tickvals) })
+ok("upset set-size ticks are labelled positive", {
+  mem <- ee_membership(dsI, dsI$alleles[1:4], 2, by = "allele")
+  b <- plotly::plotly_build(ee_plot_upset(ee_combinations(mem), ee_set_sizes(mem)))
+  tt <- unlist(lapply(b$x$layout[grep("^xaxis", names(b$x$layout))],
+                      function(a) a$ticktext))
+  length(tt) > 0 && !any(grepl("^-", tt)) })
+
+# ===========================================================================
+section("Degenerate inputs must produce a message, never a crash")
+# ===========================================================================
+al <- dsI$alleles[1:3]
+ok("empty result set -> explanatory figure",
+   built(ee_plot_histogram(ee_histogram(ee_combine(dsI, al, "Union", TRUE), 0, 1e-9, 1e-10))))
+ok("cutoff excluding everything -> empty viewer figure",
+   built(ee_plot_viewer(ee_viewer_layout(dsI, dsI$proteins$ID[1], al, "Intersection", -1))))
+ok("no promiscuous epitopes -> explanatory figure",
+   built(ee_plot_promiscuity(ee_promiscuity(dsI, al, 0.1, 0.2, 99))))
+ok("empty membership -> explanatory upset",
+   built(ee_plot_upset(data.table::data.table(n_sets = integer(0), sets = character(0),
+                                              count = integer(0)),
+                       data.table::data.table(set = character(0), size = integer(0)))))
+ok("ee_empty_plot itself builds", built(ee_empty_plot("nothing here", "try again")))
+
+ok("ee_safe turns an error into a figure", built(ee_safe(stop("boom"), "plot")))
+ok("ee_safe turns an error into a table",  tbl_ok(ee_safe(stop("boom"), "table")))
+ok("ee_safe turns an error into a UI alert",
+   grepl("boom", as.character(htmltools::renderTags(ee_safe(stop("boom"), "ui"))$html)))
+ok("ee_safe passes req() through untouched",
+   is.null(ee_safe(shiny::req(FALSE), "plot")))
+
+ok("download handler writes a real TSV", {
+  h <- ee_download_table("x", function() ee_density_table(dsI, al, "Union", 2))
+  f <- tempfile(fileext = ".tsv")
+  attr(h, "ee_content")(f)
+  d <- data.table::fread(f, sep = "\t"); unlink(f)
+  nrow(d) == dsI$n_proteins && "Density" %in% names(d) })
+ok("download handler turns a failing query into a one-row explanation", {
+  h <- ee_download_table("x", function() stop("no data"))
+  f <- tempfile(fileext = ".tsv"); attr(h, "ee_content")(f)
+  d <- data.table::fread(f, sep = "\t"); unlink(f)
+  nrow(d) == 1L && grepl("no data", d[[1]][1]) })
+ok("download handler names the file with today's date", {
+  h <- ee_download_table("epitope_x", function() data.frame(a = 1))
+  grepl(format(Sys.Date(), "%Y%m%d"), attr(h, "ee_filename")()) })
+
+# ===========================================================================
+section("Non-standard datasets")
+# ===========================================================================
+ok("MHCflurry (has NA score cells) renders a heatmap", {
+  dm <- ee_parse("data/example_MHCFlurry.txt", "data/example.fasta", "MHCFlurry", "Rank")
+  built(ee_plot_protein_allele(ee_protein_allele_counts(dm, dm$alleles[1:4], 2))) })
+ok("binding-affinity (nM) dataset renders a histogram", {
+  dn <- ee_parse("data/example_NetMHC.xls", "data/example.fasta", "NetMHC", "Score")
+  s <- ee_suggest(dn)
+  built(ee_plot_histogram(ee_histogram(ee_combine(dn, dn$alleles[1:2], "Union", TRUE),
+                                       0, s$cutoff, s$step), xlab = ee_score_label(dn))) })
+ok("a single-allele selection still works everywhere", {
+  a1 <- dsI$alleles[1]
+  built(ee_plot_histogram(ee_histogram(ee_combine(dsI, a1, "Union", TRUE), 0, 2, 0.1))) &&
+  built(ee_plot_viewer(ee_viewer_layout(dsI, "sp|P0DTC5|VME1_SARS2", a1, "Union", 2))) })
+ok("the shortest protein (22 aa) renders", {
+  built(ee_plot_viewer(ee_viewer_layout(dsI, "sp|P0DTF1|ORF3B_SARS2", dsI$alleles, "Union", 100))) })
+
+# ===========================================================================
+section("Reactive end-to-end: driving each module server with testServer")
+# ===========================================================================
+# This is the layer tests/test_core.R cannot reach: input wiring, the
+# eventReactive gates, the defaults each module pushes into its own inputs, and
+# whether an output actually produces a widget rather than an error panel.
+
+library(shiny)
+
+# A rendered output is "healthy" when it serialised to a widget and does not
+# carry the text ee_safe() writes into a failure figure.
+# renderUI yields list(html=, deps=) under testServer; renderPlotly/DT yield JSON text.
+as_text <- function(x) {
+  if (is.list(x) && !is.null(x$html)) return(as.character(x$html))
+  paste(as.character(x), collapse = "")
+}
+no_error <- function(x) {
+  t <- as_text(x)
+  nchar(t) > 200 && !grepl("Could not build this figure", t, fixed = TRUE)
+}
+shows_error <- function(x) grepl("Could not build this figure", as_text(x), fixed = TRUE)
+
+for (nm in c("class I", "class II")) {
+  d <- if (nm == "class I") dsI else dsII
+  al <- d$alleles[seq_len(min(4L, length(d$alleles)))]
+  s  <- ee_suggest(d)
+  cat(sprintf("\n  -- %s\n", nm))
+
+  testServer(distribution_server, args = list(ds = reactive(d)), {
+    session$setInputs(alleles = al, mode = "Union", xmin = 0, xmax = s$cutoff,
+                      step = s$step, plot_type = "Histogram", density = TRUE, go = 1)
+    ok("distribution: histogram renders",  no_error(output$hist))
+    ok("distribution: table renders",      no_error(output$table))
+    ok("distribution: cutoff heatmap renders", no_error(output$heatmap))
+    ok("distribution: stat strip renders", grepl("ee-stat", as_text(output$stats)))
+    ok("distribution: row count is right", nrow(tbl()) > 0L)
+
+    session$setInputs(plot_type = "Cumulative histogram", go = 2)
+    ok("distribution: cumulative view renders", no_error(output$hist))
+
+    # A parameter that makes no sense must surface a message, not kill the session.
+    session$setInputs(xmin = 5, xmax = 1, go = 3)
+    ok("distribution: inverted range reports an error in-panel",
+       shows_error(output$hist))
+    # Clearing the allele list no longer errors: ee_pick() falls back to the
+    # dataset's first allele so the panel is never blank. Parameters that are
+    # genuinely impossible (an inverted range, above) still report in-panel.
+    session$setInputs(xmin = 0, xmax = s$cutoff, alleles = character(0), go = 4)
+    ok("distribution: cleared allele selection falls back to a default",
+       no_error(output$hist) && length(p()$alleles) == 1L)
+  })
+
+  testServer(intersection_server, args = list(ds = reactive(d)), {
+    session$setInputs(alleles = al, cutoff = s$cutoff, plot_type = "UpSet",
+                      max_bars = 40, go = 1)
+    ok("intersection: upset renders", no_error(output$plot))
+    ok("intersection: table renders", no_error(output$table))
+    ok("intersection: counts are consistent", sum(cmb()$count) == nrow(mem()$m))
+    session$setInputs(plot_type = "Venn diagram", alleles = al[1:3], go = 2)
+    ok("intersection: venn renders", no_error(output$plot))
+    session$setInputs(alleles = al[1], go = 3)
+    ok("intersection: one allele reports in-panel",
+       shows_error(output$plot))
+  })
+
+  testServer(density_server, args = list(ds = reactive(d)), {
+    session$setInputs(alleles = al, mode = "Union", cutoff = s$cutoff,
+                      fill = "Number of epitopes", plot_type = "Heatmap",
+                      sort_by = "Total", log_fill = TRUE, log_axes = FALSE, go = 1)
+    ok("density: scatter renders", no_error(output$scatter))
+    ok("density: table renders",   no_error(output$table))
+    ok("density: grid renders",    no_error(output$grid))
+    ok("density: every protein is listed", nrow(tbl()) == d$n_proteins)
+    session$setInputs(plot_type = "Bar plot", fill = "Density", go = 2)
+    ok("density: bar plot by density renders", no_error(output$grid))
+  })
+
+  testServer(viewer_server, args = list(ds = reactive(d)), {
+    session$setInputs(protein = "sp|P0DTC2|SPIKE_SARS2", alleles = al,
+                      mode = "Union", cutoff = s$cutoff, label = TRUE, go = 1)
+    ok("viewer: map renders",   no_error(output$plot))
+    ok("viewer: table renders", no_error(output$table))
+    ok("viewer: lanes never overlap", {
+      ep <- lay()$epitopes
+      all(vapply(split(seq_len(nrow(ep)), ep$lane), function(ix) {
+        o <- ix[order(ep$Pos[ix])]
+        length(o) < 2 || all(ep$Pos[o][-1] > ep$End[o][-length(o)])
+      }, logical(1))) })
+    session$setInputs(mode = "Intersection", go = 2)
+    ok("viewer: intersection mode renders", no_error(output$plot))
+    session$setInputs(cutoff = -1, go = 3)
+    ok("viewer: impossible cutoff gives an explanatory figure", no_error(output$plot))
+  })
+
+  testServer(promiscuity_server, args = list(ds = reactive(d)), {
+    session$setInputs(alleles = d$alleles, strong = s$strong, weak = s$weak,
+                      min_alleles = max(2L, length(d$alleles) - 2L), go = 1)
+    ok("promiscuity: heatmap renders", no_error(output$plot))
+    ok("promiscuity: table renders",   no_error(output$table))
+    ok("promiscuity: table and heatmap use the same cutoff",
+       all(pr()$table$NAlleles >= max(2L, length(d$alleles) - 2L)))
+    session$setInputs(strong = s$weak * 2, weak = s$strong, go = 2)
+    ok("promiscuity: strong > weak reports in-panel",
+       shows_error(output$plot))
+  })
+
+  testServer(conservation_server, args = list(ds = reactive(d)), {
+    session$setInputs(proteins = d$proteins$ID[1:4], alleles = al, mode = "Union",
+                      cutoff = s$cutoff, plot_type = "UpSet", max_bars = 40, go = 1)
+    ok("conservation: upset renders", no_error(output$plot))
+    ok("conservation: table renders", no_error(output$table))
+    session$setInputs(plot_type = "Venn diagram", proteins = d$proteins$ID[1:3], go = 2)
+    ok("conservation: venn renders", no_error(output$plot))
+  })
+}
+
+section("Every bundled example dataset parses")
+for (k in names(EE_EXAMPLES)) {
+  ex <- EE_EXAMPLES[[k]]
+  ok(sprintf("%-40s files exist", k), file.exists(ex$pred) && file.exists(ex$fasta))
+  d <- tryCatch(ee_parse(ex$pred, ex$fasta, ex$predictor, "Rank"), error = function(e) e)
+  ok(sprintf("%-40s parses (%s)", k,
+             if (inherits(d, "error")) conditionMessage(d)
+             else sprintf("%2d proteins, %2d alleles, class %s",
+                          d$n_proteins, length(d$alleles), d$mhc_class)),
+     inherits(d, "ee_dataset"))
+  if (inherits(d, "ee_dataset")) {
+    ok(sprintf("%-40s MHC class identified", k), d$mhc_class %in% c("I", "II"))
+  }
+}
+ok("the Spike-variant example reproduces the paper's conservation result", {
+  ex <- EE_EXAMPLES[["Spike variants \u2014 conservation (paper)"]]
+  d  <- ee_parse(ex$pred, ex$fasta, ex$predictor, "Rank")
+  m  <- ee_membership(d, d$proteins$ID, 10, by = "protein",
+                      alleles = d$alleles, mode = "Union")
+  c2 <- ee_combinations(m)
+  setequal(d$proteins$ID, c("Alpha","Beta","Delta","Gamma","Omicron","Wuhan")) &&
+    sum(c2$count[c2$n_sets == 6L]) == 277L &&
+    c2[n_sets == 1L][which.max(count)]$sets == "Omicron" })
+ok("the paper's class I table canonicalises its dotted allele names", {
+  ex <- EE_EXAMPLES[["SARS-CoV-2 proteome \u2014 class I (paper)"]]
+  d  <- ee_parse(ex$pred, ex$fasta, ex$predictor, "Rank")
+  d$mhc_class == "I" && all(grepl(":", d$alleles)) && !any(grepl("[.]", d$alleles)) })
+
+
+section("Reactive end-to-end: the input module")
+testServer(data_input_server, args = list(preset = TRUE), {
+  # The example tab loads on arrival, before any button press.
+  ok("example loads a dataset on arrival", inherits(session$returned(), "ee_dataset"))
+  session$setInputs(preset = names(EE_EXAMPLES)[1], method = "Rank", go = 1)
+  ok("example is still loaded after pressing the button",
+     inherits(session$returned(), "ee_dataset"))
+  ok("example summary strip renders", grepl("ee-stat", as_text(output$summary)))
+  ok("example preview table renders", no_error(output$preview))
+  for (k in names(EE_EXAMPLES)) {
+    session$setInputs(preset = k, go = session$userData$n <- (session$userData$n %||% 1) + 1)
+    ok(sprintf("example dataset loads: %s", k), inherits(session$returned(), "ee_dataset"))
+  }
+})
+
+testServer(data_input_server, args = list(preset = NULL), {
+  # observeEvent(ignoreInit = TRUE) swallows the first setInputs under
+  # testServer (a real actionButton starts at 0 and has already flushed), so
+  # press twice to reach the handler.
+  session$setInputs(predictor = "NetMHCpan", method = "Rank", go = 1)
+  session$setInputs(go = 2)
+  ok("upload with no file reports a readable error",
+     grepl("Select a prediction file", as_text(output$status)))
+  ok("no dataset is returned when the load failed", is.null(session$returned()))
+})
+
+cat(sprintf("\n\033[1m%d passed, %d failed\033[0m\n", .pass, .fail))
+if (.fail) { cat("\nFailed:\n"); cat(paste0("  - ", .failures, collapse = "\n"), "\n"); quit(status = 1) }

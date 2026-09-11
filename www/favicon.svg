@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+     viewBox="0 0 32 32" role="img" aria-label="Epitope-Evaluator">
+  <rect width="32" height="32" rx="7" fill="#0B3C5D"/>
+  <rect x="5.0" y="7.0" width="22.0" height="4.6" rx="2.3" fill="#9CC3E5"/>
+  <rect x="5.0" y="14.2" width="10.0" height="4.6" rx="2.3" fill="#FFCE5C"/>
+  <rect x="17.0" y="14.2" width="10.0" height="4.6" rx="2.3" fill="#F08C3C"/>
+  <rect x="9.0" y="21.4" width="9.0" height="4.6" rx="2.3" fill="#F08C3C"/>
+  <rect x="20.0" y="21.4" width="7.0" height="4.6" rx="2.3" fill="#B2182B"/>
+</svg>
