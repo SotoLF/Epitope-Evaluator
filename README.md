@@ -1,4 +1,4 @@
-# Epitope-Evaluator 2
+# Epitope-Evaluator
 
 An interactive web application to study predicted T-cell epitopes.
 
@@ -113,37 +113,7 @@ Rscript tests/benchmark.R      # synthetic 10^6-peptide scale check (~1 min)
 `tests/benchmark.R [n_peptides] [n_alleles]` takes its size from the command
 line, so `Rscript tests/benchmark.R 200000 8` is a quick smoke run.
 
-## Deploying
 
-The dependency set is CRAN-only with no system libraries, so shinyapps.io needs
-no special configuration.
-
-```bash
-Rscript deploy.R --check       # bundle contents and size, publish nothing
-Rscript deploy.R --staging     # publish to Epitope-Evaluator-v2
-Rscript deploy.R --production  # overwrite the live Epitope-Evaluator
-```
-
-`--check` verifies the dependencies, builds the app object, and lists exactly
-what would be uploaded — it also refuses to proceed if any example dataset
-would be left out of the bundle. Development files (tests, `tools/`, this
-README) are excluded.
-
-Credentials are read from a gitignored `.Renviron` beside `deploy.R`, so the
-token never reaches the repository:
-
-```
-SHINYAPPS_ACCOUNT=fuxmanlab
-SHINYAPPS_TOKEN=...
-SHINYAPPS_SECRET=...
-```
-
-Get them from <https://www.shinyapps.io/admin/#/tokens> (Show → Show secret).
-
-For a large deployment, note the memory profile in
-[CHANGELOG.md](CHANGELOG.md#performance): 10⁶ peptides × 20 alleles wants about
-1 GB, so pick an instance size accordingly. Upload size is capped in
-`global.R` (`shiny.maxRequestSize`, 400 MB by default).
 
 ## Citation
 
